@@ -1,0 +1,18 @@
+// Build extras for JDY-31 SPP Tool
+// This file is automatically included by Cordova
+
+ext {
+    // Explicitly set SDK versions to avoid conflicts
+    cdvCompileSdkVersion = 34
+    cdvTargetSdkVersion = 34
+    cdvMinSdkVersion = 21
+}
+
+// Override Android build settings
+android {
+    compileSdkVersion 34
+    defaultConfig {
+        targetSdkVersion 34
+        minSdkVersion 21
+    }
+}
