@@ -19,26 +19,23 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm' # 缓存npm依赖，加速构建
+        cache: 'npm'
 
     - name: Set up Java
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17'
-        cache: 'gradle' # 缓存Gradle，加速构建
+        cache: 'gradle'
 
     - name: Install Android SDK
       uses: android-actions/setup-android@v3
 
     - name: Install required Android packages
       run: |
-        # 自动接受许可证（更简洁的方式）
         yes | sdkmanager --licenses
-        
-        # 安装SDK 36及匹配的构建工具（36的构建工具可能为36.0.0或更高）
         sdkmanager "platforms;android-36"
-        sdkmanager "build-tools;36.0.0" # 确保与SDK 36匹配
+        sdkmanager "build-tools;36.0.0"
         sdkmanager "platform-tools"
         sdkmanager "tools"
 
@@ -49,23 +46,29 @@ jobs:
       run: npm install
 
     - name: Add Android platform
-      run: cordova platform add android@12.0.0 # 指定Cordova Android平台版本，避免兼容性问题
+      run: cordova platform add android@12.0.0  # 固定Cordova Android版本，提升兼容性
 
-    - name: Configure build settings
+    - name: Fix Gradle version (解决XmlParser报错)
       run: |
-        # 确保使用SDK 36
+        cd platforms/android
+        # 替换为兼容的Gradle 7.5版本
+        sed -i 's/distributionUrl=.*/distributionUrl=https\:\/\/services.gradle.org\/distributions\/gradle-7.5-all.zip/' gradle/wrapper/gradle-wrapper.properties
+        # 确认修改结果
+        cat gradle/wrapper/gradle-wrapper.properties
+        cd ../..
+
+    - name: Configure SDK version
+      run: |
         sed -i 's/"COMPILE_SDK_VERSION": null,/"COMPILE_SDK_VERSION": 36,/' platforms/android/cdv-gradle-config.json
         sed -i 's/"TARGET_SDK_VERSION": null,/"TARGET_SDK_VERSION": 36,/' platforms/android/cdv-gradle-config.json
-        # 确认配置
-        cat platforms/android/cdv-gradle-config.json
 
     - name: Build Android APK (Release)
-      run: cordova build android --release -- --packageType=apk # 强制打包APK
+      run: cordova build android --release -- --packageType=apk
 
-    - name: Locate APK
+    - name: Locate built APK
       run: find platforms/android -name "*.apk" -print
 
-    - name: Upload APK Artifact
+    - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: jdy31-spp-tool-apk
