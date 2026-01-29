@@ -100,16 +100,29 @@ jobs:
       run: |
         # Check the build output directory structure
         ls -la platforms/android/app/build/outputs/
-        ls -la platforms/android/app/build/outputs/apk/
-        ls -la platforms/android/app/build/outputs/apk/release/
-        # Look for APK files in common locations
+        # Check if apk directory exists
+        if [ -d "platforms/android/app/build/outputs/apk" ]; then
+          ls -la platforms/android/app/build/outputs/apk/
+          if [ -d "platforms/android/app/build/outputs/apk/release" ]; then
+            ls -la platforms/android/app/build/outputs/apk/release/
+          fi
+        fi
+        # Check if bundle directory exists
+        if [ -d "platforms/android/app/build/outputs/bundle" ]; then
+          ls -la platforms/android/app/build/outputs/bundle/
+          if [ -d "platforms/android/app/build/outputs/bundle/release" ]; then
+            ls -la platforms/android/app/build/outputs/bundle/release/
+          fi
+        fi
+        # Look for APK and AAB files in common locations
         find platforms/android -name "*.apk"
+        find platforms/android -name "*.aab"
 
-    - name: Upload APK artifact
+    - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: jdy31-spp-tool
         path: |
-          platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
-          platforms/android/app/build/outputs/apk/release/app-release.apk
+          platforms/android/app/build/outputs/apk/release/*.apk
+          platforms/android/app/build/outputs/bundle/release/*.aab
         retention-days: 30
