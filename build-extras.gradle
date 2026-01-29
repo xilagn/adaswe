@@ -5,7 +5,7 @@ ext {
     // Explicitly set SDK versions to avoid conflicts
     cdvCompileSdkVersion = 34
     cdvTargetSdkVersion = 34
-    cdvMinSdkVersion = 21
+    cdvMinSdkVersion = 22
 }
 
 // Override Android build settings
@@ -13,6 +13,6 @@ android {
     compileSdkVersion 34
     defaultConfig {
         targetSdkVersion 34
-        minSdkVersion 21
+        minSdkVersion 22
     }
 }
