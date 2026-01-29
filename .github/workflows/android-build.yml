@@ -35,6 +35,21 @@ jobs:
     - name: Install dependencies
       run: npm install
 
+    - name: Debug - Check directory structure
+      run: ls -la
+
+    - name: Debug - Check package.json
+      run: cat package.json
+
+    - name: Debug - Check config.xml
+      run: cat config.xml
+
+    - name: Debug - Check www directory
+      run: ls -la www
+
+    - name: Debug - Check www/index.html
+      run: head -n 20 www/index.html
+
     - name: Add Android platform
       run: cordova platform add android
 
