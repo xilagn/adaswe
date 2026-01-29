@@ -19,110 +19,55 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
+        cache: 'npm' # 缓存npm依赖，加速构建
 
     - name: Set up Java
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17'
+        cache: 'gradle' # 缓存Gradle，加速构建
 
     - name: Install Android SDK
       uses: android-actions/setup-android@v3
 
     - name: Install required Android packages
       run: |
-        # Accept SDK licenses first
-        mkdir -p "$ANDROID_HOME/licenses"
-        echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > "$ANDROID_HOME/licenses/android-sdk-license"
-        echo "d56f5187479451eabf01fb78af6dfcb131a6481e" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
-        echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$ANDROID_HOME/licenses/intel-android-extra-license"
+        # 自动接受许可证（更简洁的方式）
+        yes | sdkmanager --licenses
         
-        # Use sdkmanager to install required packages without yes command
-        sdkmanager --sdk_root=$ANDROID_HOME "platforms;android-36"
-        sdkmanager --sdk_root=$ANDROID_HOME "build-tools;35.0.0"
-        sdkmanager --sdk_root=$ANDROID_HOME "platform-tools"
-        sdkmanager --sdk_root=$ANDROID_HOME "tools"
-        
-        # Verify installation
-        ls -la $ANDROID_HOME/platforms/
-        ls -la $ANDROID_HOME/build-tools/
-        # Set environment variables to force SDK 36
-        echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
-        echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-        echo "PLATFORM_VERSION_CODENAME=Z" >> $GITHUB_ENV
-        echo "PLATFORM_VERSION=16" >> $GITHUB_ENV
+        # 安装SDK 36及匹配的构建工具（36的构建工具可能为36.0.0或更高）
+        sdkmanager "platforms;android-36"
+        sdkmanager "build-tools;36.0.0" # 确保与SDK 36匹配
+        sdkmanager "platform-tools"
+        sdkmanager "tools"
 
     - name: Install Cordova CLI
       run: npm install -g cordova
 
-    - name: Install dependencies
+    - name: Install project dependencies
       run: npm install
 
-    - name: Debug - Check directory structure
-      run: ls -la
-
-    - name: Debug - Check package.json
-      run: cat package.json
-
-    - name: Debug - Check config.xml
-      run: cat config.xml
-
-    - name: Debug - Check www directory
-      run: ls -la www
-
-    - name: Debug - Check www/index.html
-      run: head -n 20 www/index.html
-
     - name: Add Android platform
-      run: cordova platform add android
+      run: cordova platform add android@12.0.0 # 指定Cordova Android平台版本，避免兼容性问题
 
-    - name: Fix SDK version conflict
+    - name: Configure build settings
       run: |
-        # Fix COMPILE_SDK_VERSION to 36 to match TARGET_SDK_VERSION
+        # 确保使用SDK 36
         sed -i 's/"COMPILE_SDK_VERSION": null,/"COMPILE_SDK_VERSION": 36,/' platforms/android/cdv-gradle-config.json
-        # Also fix SDK_VERSION to 36
-        sed -i 's/"SDK_VERSION": [0-9]\+/"SDK_VERSION": 36/' platforms/android/cdv-gradle-config.json
-        # Verify the fix
+        sed -i 's/"TARGET_SDK_VERSION": null,/"TARGET_SDK_VERSION": 36,/' platforms/android/cdv-gradle-config.json
+        # 确认配置
         cat platforms/android/cdv-gradle-config.json
-        # Check if Android SDK 36 is installed
-        ls -la $ANDROID_HOME/platforms/
-        # Check available SDK versions
-        sdkmanager --list | grep "platforms;android-"
-        # Force use of SDK 36 by setting ANDROID_SDK_ROOT
-        export ANDROID_SDK_ROOT=$ANDROID_HOME
-        echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-        echo "ANDROID_HOME=$ANDROID_HOME"
 
-    - name: Build Android APK
-      run: cordova build android --release
+    - name: Build Android APK (Release)
+      run: cordova build android --release -- --packageType=apk # 强制打包APK
 
-    - name: Debug - Check build output directory
-      run: |
-        # Check the build output directory structure
-        ls -la platforms/android/app/build/outputs/
-        # Check if apk directory exists
-        if [ -d "platforms/android/app/build/outputs/apk" ]; then
-          ls -la platforms/android/app/build/outputs/apk/
-          if [ -d "platforms/android/app/build/outputs/apk/release" ]; then
-            ls -la platforms/android/app/build/outputs/apk/release/
-          fi
-        fi
-        # Check if bundle directory exists
-        if [ -d "platforms/android/app/build/outputs/bundle" ]; then
-          ls -la platforms/android/app/build/outputs/bundle/
-          if [ -d "platforms/android/app/build/outputs/bundle/release" ]; then
-            ls -la platforms/android/app/build/outputs/bundle/release/
-          fi
-        fi
-        # Look for APK and AAB files in common locations
-        find platforms/android -name "*.apk"
-        find platforms/android -name "*.aab"
+    - name: Locate APK
+      run: find platforms/android -name "*.apk" -print
 
-    - name: Upload build artifacts
+    - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: jdy31-spp-tool
-        path: |
-          platforms/android/app/build/outputs/apk/release/*.apk
-          platforms/android/app/build/outputs/bundle/release/*.aab
+        name: jdy31-spp-tool-apk
+        path: platforms/android/app/build/outputs/apk/release/*.apk
         retention-days: 30
