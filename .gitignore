@@ -64,7 +64,6 @@ expo-env.d.ts
 # Cordova
 platforms/
 plugins/
-www/
 
 # Environment variables
 .env
