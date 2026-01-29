@@ -31,12 +31,18 @@ jobs:
 
     - name: Install required Android packages
       run: |
-        # Use sdkmanager to install required packages
-        yes | sdkmanager "platforms;android-36"
-        yes | sdkmanager "build-tools;35.0.0"
-        yes | sdkmanager "platform-tools"
-        yes | sdkmanager "tools"
-        yes | sdkmanager "tools:latest"
+        # Accept SDK licenses first
+        mkdir -p "$ANDROID_HOME/licenses"
+        echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > "$ANDROID_HOME/licenses/android-sdk-license"
+        echo "d56f5187479451eabf01fb78af6dfcb131a6481e" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
+        echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$ANDROID_HOME/licenses/intel-android-extra-license"
+        
+        # Use sdkmanager to install required packages without yes command
+        sdkmanager --sdk_root=$ANDROID_HOME "platforms;android-36"
+        sdkmanager --sdk_root=$ANDROID_HOME "build-tools;35.0.0"
+        sdkmanager --sdk_root=$ANDROID_HOME "platform-tools"
+        sdkmanager --sdk_root=$ANDROID_HOME "tools"
+        
         # Verify installation
         ls -la $ANDROID_HOME/platforms/
         ls -la $ANDROID_HOME/build-tools/
