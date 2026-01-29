@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.jdy31.app" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>JDY-31 SPP Tool</name>
+    <description>
+        JDY-31-SPP 蓝牙串口工具，支持GBK编码和WebSocket转发
+    </description>
+    <author email="dev@jdy31.com" href="https://jdy31.com">
+        JDY-31 Team
+    </author>
+    <content src="index.html" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <access origin="*" />
+    <allow-navigation href="*" />
+    
+    <!-- Android平台配置 -->
+    <platform name="android">
+        <allow-intent href="market:*" />
+        <config-file parent="/*" target="AndroidManifest.xml">
+            <uses-permission android:name="android.permission.BLUETOOTH" />
+            <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+            <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+            <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+            <uses-permission android:name="android.permission.INTERNET" />
+            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+            <uses-feature android:name="android.hardware.bluetooth" android:required="true" />
+            <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+        </config-file>
+        <preference name="android-minSdkVersion" value="21" />
+        <preference name="android-targetSdkVersion" value="34" />
+        <preference name="android-permissions" value="BLUETOOTH, BLUETOOTH_ADMIN, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, INTERNET, ACCESS_NETWORK_STATE" />
+    </platform>
+</widget>
