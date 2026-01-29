@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: content: https://cdn.tailwindcss.com https://cdn.jsdelivr.net; script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval';">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-tap-highlight" content="no">
+    <title>JDY-31-SPP 蓝牙工具 - GBK编码</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- gbk.js 用于GBK编码 -->
+    <script src="https://cdn.jsdelivr.net/npm/gbk.js@0.2.0/dist/gbk.min.js"></script>
+    <!-- 统一的 Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0ea5e9',
+                        secondary: '#0284c7',
+                        accent: '#38bdf8',
+                        dark: '#0f172a',
+                        'dark-blue': '#0f172a',
+                        'light-blue': '#e0f2fe',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                        info: '#3b82f6'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-in': 'slideIn 0.3s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideIn: {
+                            '0%': { transform: 'translateY(10px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                    },
+                    boxShadow: {
+                        'neon': '0 0 5px theme("colors.primary"), 0 0 20px theme("colors.primary")',
+                        'neon-lg': '0 0 10px theme("colors.primary"), 0 0 30px theme("colors.primary")',
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 0 0 10px theme('colors.primary');
+            }
+            .border-glow {
+                box-shadow: 0 0 5px theme('colors.primary');
+            }
+            .bg-grid {
+                background-image: 
+                    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+                background-size: 20px 20px;
+            }
+            .scrollbar-thin {
+                scrollbar-width: thin;
+            }
+            .scrollbar-thin::-webkit-scrollbar {
+                width: 4px;
+                height: 4px;
+            }
+            .scrollbar-thin::-webkit-scrollbar-track {
+                background: rgba(255, 255, 255, 0.1);
+            }
+            .scrollbar-thin::-webkit-scrollbar-thumb {
+                background: theme('colors.primary');
+                border-radius: 2px;
+            }
+            .glass-effect {
+                background: rgba(15, 23, 42, 0.7);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark-blue text-white min-h-screen flex flex-col">
+    <!-- 顶部导航栏 -->
+    <header class="bg-dark border-b border-gray-800 shadow-md">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fa fa-bluetooth text-primary text-2xl"></i>
+                <h1 class="text-xl font-bold text-primary">JDY-31-SPP 蓝牙工具 - GBK编码</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div id="connection-status" class="flex items-center space-x-2">
+                    <span class="inline-block w-3 h-3 rounded-full bg-gray-500"></span>
+                    <span class="text-sm">未连接</span>
+                </div>
+                <button id="help-btn" class="p-2 rounded-full hover:bg-gray-800 transition-colors">
+                    <i class="fa fa-question-circle text-gray-400"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="flex-grow container mx-auto px-4 py-6 flex flex-col md:flex-row gap-6">
+        <!-- 左侧面板：设备管理 -->
+        <div class="w-full md:w-1/3 space-y-6">
+            <!-- 设备信息卡片 -->
+            <div class="bg-dark rounded-lg border border-gray-800 shadow-lg p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold flex items-center">
+                        <i class="fa fa-info-circle text-primary mr-2"></i>
+                        模块信息
+                    </h2>
+                </div>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">模块型号:</span>
+                        <span class="font-medium">JDY-31-SPP</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">蓝牙版本:</span>
+                        <span class="font-medium">蓝牙 3.0 SPP</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">默认波特率:</span>
+                        <span class="font-medium">9600</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">默认设备名:</span>
+                        <span class="font-medium">JDY-31-SPP</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">默认密码:</span>
+                        <span class="font-medium">1234</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">通信距离:</span>
+                        <span class="font-medium">最大 30 米</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 蓝牙设备连接 -->
+            <div class="bg-dark rounded-lg border border-gray-800 shadow-lg p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold flex items-center">
+                        <i class="fa fa-plug text-primary mr-2"></i>
+                        蓝牙连接
+                    </h2>
+                    <button id="connect-serial-btn" class="bg-primary hover:bg-secondary text-white px-3 py-1 rounded-md text-sm transition-colors flex items-center">
+                        <i class="fa fa-connectdevelop mr-1"></i> 连接设备
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <!-- 蓝牙配置 -->
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">设备列表</label>
+                            <select id="device-list" class="w-full bg-gray-900 border border-gray-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-primary">
+                                <option value="">请先扫描设备</option>
+                            </select>
+                        </div>
+                        <button id="scan-devices-btn" class="w-full bg-gray-800 hover:bg-gray-700 text-sm px-2 py-1 rounded transition-colors">
+                            <i class="fa fa-search"></i> 扫描蓝牙设备
+                        </button>
+                    </div>
+                    
+                    <!-- 连接状态 -->
+                    <div id="serial-status" class="text-sm flex items-center">
+                        <span class="inline-block w-3 h-3 rounded-full bg-gray-500 mr-2"></span>
+                        <span>未连接</span>
+                    </div>
+                    
+                    <!-- 已连接设备信息 -->
+                    <div id="connected-device-info" class="hidden">
+                        <div class="text-sm space-y-1">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">设备:</span>
+                                <span id="device-name" class="font-medium">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">地址:</span>
+                                <span id="device-address" class="font-medium truncate">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">状态:</span>
+                                <span id="device-state" class="font-medium text-green-500">已连接</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WebSocket连接 -->
+            <div class="bg-dark rounded-lg border border-gray-800 shadow-lg p-4">
+                <h2 class="text-lg font-semibold mb-4 flex items-center">
+                    <i class="fa fa-cloud text-primary mr-2"></i>
+                    WebSocket连接
+                </h2>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">服务器地址</label>
+                        <div class="flex">
+                            <input type="text" id="ws-url" class="flex-grow bg-gray-900 border border-gray-700 rounded-l-md px-3 py-2 text-sm focus:outline-none focus:border-primary" value="ws://107.174.240.113:8080">
+                            <button id="connect-ws-btn" class="bg-primary hover:bg-secondary text-white px-3 py-2 rounded-r-md text-sm transition-colors">
+                                连接
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">设备ID</label>
+                        <input type="text" id="device-id" class="w-full bg-gray-900 border border-gray-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-primary" value="jdy31_device_001">
+                    </div>
+                    <div id="ws-status" class="text-sm flex items-center">
+                        <span class="inline-block w-3 h-3 rounded-full bg-gray-500 mr-2"></span>
+                        <span>未连接</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧面板：通信控制 -->
+        <div class="w-full md:w-2/3 space-y-6">
+            <!-- AT命令发送 -->
+            <div class="bg-dark rounded-lg border border-gray-800 shadow-lg p-4">
+                <h2 class="text-lg font-semibold mb-4 flex items-center">
+                    <i class="fa fa-terminal text-primary mr-2"></i>
+                    AT命令发送
+                </h2>
+                <div class="space-y-3">
+                    <div class="flex space-x-2">
+                        <input type="text" id="command-input" class="flex-grow bg-gray-900 border border-gray-700 rounded-md px-3 py-2 focus:outline-none focus:border-primary" placeholder="输入AT命令，如AT、AT+NAME等">
+                        <button id="send-command-btn" class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded-md transition-colors">
+                            发送
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        <button class="at-command-btn bg-gray-800 hover:bg-gray-700 text-sm px-2 py-1 rounded transition-colors">AT</button>
+                        <button class="at-command-btn bg-gray-800 hover:bg-gray-700 text-sm px-2 py-1 rounded transition-colors">AT+VERSION</button>
+                        <button class="at-command-btn bg-gray-800 hover:bg-gray-700 text-sm px-2 py-1 rounded transition-colors">AT+NAME?</button>
+                        <button class="at-command-btn bg-gray-800 hover:bg-gray-700 text-sm px-2 py-1 rounded transition-colors">AT+BAUD?</button>
+                        <button class="at-command-btn bg-gray-800 hover:bg-gray-700 text-sm px-2 py-1 rounded transition-colors">AT+PIN?</button>
+                        <button class="at-command-btn bg-gray-800 hover:bg-gray-700 text-sm px-2 py-1 rounded transition-colors">AT+LADDR</button>
+                        <button class="at-command-btn bg-gray-800 hover:bg-gray-700 text-sm px-2 py-1 rounded transition-colors">AT+RESET</button>
+                        <button class="at-command-btn bg-gray-800 hover:bg-gray-700 text-sm px-2 py-1 rounded transition-colors">AT+DISC</button>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <button class="at-command-btn bg-gray-800 hover:bg-gray-700 text-sm px-2 py-1 rounded transition-colors">AT+NAME=JDY-31-SPP</button>
+                        <button class="at-command-btn bg-gray-800 hover:bg-gray-700 text-sm px-2 py-1 rounded transition-colors">AT+BAUD4</button>
+                        <button class="at-command-btn bg-gray-800 hover:bg-gray-700 text-sm px-2 py-1 rounded transition-colors">AT+BAUD5</button>
+                        <button class="at-command-btn bg-gray-800 hover:bg-gray-700 text-sm px-2 py-1 rounded transition-colors">AT+PIN1234</button>
+                        <button class="at-command-btn bg-gray-800 hover:bg-gray-700 text-sm px-2 py-1 rounded transition-colors">AT+DEFAULT</button>
+                        <button class="at-command-btn bg-gray-800 hover:bg-gray-700 text-sm px-2 py-1 rounded transition-colors">AT+ENLOG1</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据发送 -->
+            <div class="bg-dark rounded-lg border border-gray-800 shadow-lg p-4">
+                <h2 class="text-lg font-semibold mb-4 flex items-center">
+                    <i class="fa fa-paper-plane text-primary mr-2"></i>
+                    数据发送 (支持GBK编码)
+                </h2>
+                <div class="space-y-3">
+                    <div class="flex space-x-2">
+                        <input type="text" id="data-input" class="flex-grow bg-gray-900 border border-gray-700 rounded-md px-3 py-2 focus:outline-none focus:border-primary" placeholder="输入要发送的数据...">
+                        <button id="send-data-btn" class="bg-success hover:bg-green-600 text-white px-4 py-2 rounded-md transition-colors">
+                            发送
+                        </button>
+                    </div>
+                    <div class="flex items-center space-x-4 flex-wrap">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="append-crlf" class="sr-only peer" checked>
+                            <div class="relative w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                            <span class="ml-3 text-sm font-medium text-gray-300">添加回车换行</span>
+                        </label>
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="hex-mode" class="sr-only peer">
+                            <div class="relative w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                            <span class="ml-3 text-sm font-medium text-gray-300">HEX模式</span>
+                        </label>
+                        <!-- 编码选择 -->
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">发送编码</label>
+                            <select id="send-encoding" class="w-24 bg-gray-900 border border-gray-700 rounded-md px-2 py-1 text-sm focus:outline-none focus:border-primary">
+                                <option value="utf8">UTF-8</option>
+                                <option value="gbk" selected>GBK</option>
+                                <option value="gb2312">GB2312</option>
+                            </select>
+                        </div>
+                        <!-- 解码选择 -->
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">接收解码</label>
+                            <select id="receive-encoding" class="w-24 bg-gray-900 border border-gray-700 rounded-md px-2 py-1 text-sm focus:outline-none focus:border-primary">
+                                <option value="auto">自动检测</option>
+                                <option value="utf8">UTF-8</option>
+                                <option value="gbk" selected>GBK</option>
+                                <option value="gb2312">GB2312</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-2" id="encoding-info">
+                        GBK编码状态: 等待检测...
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据显示 -->
+            <div class="bg-dark rounded-lg border border-gray-800 shadow-lg p-4 flex-grow">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold flex items-center">
+                        <i class="fa fa-exchange text-primary mr-2"></i>
+                        数据传输日志
+                    </h2>
+                    <div class="flex space-x-2">
+                        <button id="clear-log-btn" class="text-gray-400 hover:text-white text-sm transition-colors">
+                            <i class="fa fa-trash"></i> 清除
+                        </button>
+                        <button id="auto-scroll-toggle" class="text-gray-400 hover:text-white text-sm transition-colors">
+                            <i class="fa fa-arrow-down"></i> 自动滚动
+                        </button>
+                        <button id="test-gbk-btn" class="text-gray-400 hover:text-white text-sm transition-colors bg-primary px-2 py-1 rounded">
+                            <i class="fa fa-language"></i> GBK测试
+                        </button>
+                    </div>
+                </div>
+                <div id="data-log" class="bg-gray-900 rounded-md p-3 h-80 overflow-y-auto scrollbar-thin text-sm font-mono">
+                    <div class="text-gray-500">等待连接JDY-31-SPP设备...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 底部状态栏 -->
+    <footer class="bg-dark border-t border-gray-800 py-3">
+        <div class="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
+            <div id="serial-api-status" class="text-sm text-gray-400 mb-2 md:mb-0">
+                蓝牙状态: <span class="text-gray-500">检查中...</span>
+            </div>
+            <div id="connection-info" class="text-sm text-gray-400">
+                未连接设备 | 编码: GBK
+            </div>
+        </div>
+    </footer>
+
+    <!-- GBK测试弹窗 -->
+    <div id="gbk-test-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+        <div class="bg-dark rounded-lg border border-gray-800 shadow-neon-lg p-6 w-full max-w-md animate-fade-in">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-primary">GBK编码测试</h2>
+                <button id="close-gbk-test-btn" class="text-gray-400 hover:text-white">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="text-sm text-gray-300">
+                    <p>选择要测试的中文文本，工具将使用GBK编码发送。</p>
+                </div>
+                
+                <div class="grid grid-cols-1 gap-2">
+                    <button class="gbk-test-sample bg-gray-800 hover:bg-gray-700 text-sm px-4 py-3 rounded transition-colors text-left">
+                        <div class="font-medium">中文测试</div>
+                        <div class="text-xs text-gray-400 mt-1">简单中文文本</div>
+                    </button>
+                    <button class="gbk-test-sample bg-gray-800 hover:bg-gray-700 text-sm px-4 py-3 rounded transition-colors text-left">
+                        <div class="font-medium">温度:25℃ 湿度:60%</div>
+                        <div class="text-xs text-gray-400 mt-1">带特殊符号的中文</div>
+                    </button>
+                    <button class="gbk-test-sample bg-gray-800 hover:bg-gray-700 text-sm px-4 py-3 rounded transition-colors text-left">
+                        <div class="font-medium">蓝牙模块通信测试</div>
+                        <div class="text-xs text-gray-400 mt-1">设备相关文本</div>
+                    </button>
+                    <button class="gbk-test-sample bg-gray-800 hover:bg-gray-700 text-sm px-4 py-3 rounded transition-colors text-left">
+                        <div class="font-medium">JDY-31模块工作正常</div>
+                        <div class="text-xs text-gray-400 mt-1">混合中英文</div>
+                    </button>
+                </div>
+                
+                <div class="pt-4 border-t border-gray-700">
+                    <button id="custom-gbk-test-btn" class="w-full bg-primary hover:bg-secondary text-white px-4 py-2 rounded-md transition-colors">
+                        使用自定义文本测试
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知提示 -->
+    <div id="notification" class="fixed top-4 right-4 bg-dark border border-gray-800 rounded-lg shadow-lg p-4 max-w-xs transform translate-x-full transition-transform duration-300 z-50">
+        <div class="flex items-start">
+            <div id="notification-icon" class="text-primary mr-3 mt-0.5">
+                <i class="fa fa-info-circle"></i>
+            </div>
+            <div class="flex-grow">
+                <h3 id="notification-title" class="font-semibold text-sm">通知标题</h3>
+                <p id="notification-message" class="text-gray-400 text-xs mt-1">通知内容</p>
+            </div>
+            <button id="close-notification-btn" class="text-gray-500 hover:text-white ml-4">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <script src="cordova.js"></script>
+    <script>
+        // 全局变量
+        let bluetoothConnected = false;
+        let bluetoothDevice = null;
+        let bluetoothDeviceId = null;
+        let websocket = null;
+        let isAutoScrollEnabled = true;
+        let reconnectTimer = null;
+        let wsReconnectTimer = null;
+        let settings = {
+            autoReconnectSerial: false,
+            autoReconnectWebsocket: true,
+            backgroundMode: true,
+            reconnectInterval: 5,
+            logLevel: 'info'
+        };
+
+        // JDY-31-SPP 相关常量
+        const JDY31_CONSTANTS = {
+            DEFAULT_NAME: 'JDY-31-SPP',
+            DEFAULT_PIN: '1234',
+            DEFAULT_BAUD: 9600
+        };
+
+        // DOM元素
+        const elements = {
+            // 蓝牙控制
+            connectSerialBtn: document.getElementById('connect-serial-btn'),
+            scanDevicesBtn: document.getElementById('scan-devices-btn'),
+            deviceList: document.getElementById('device-list'),
+            serialStatus: document.getElementById('serial-status'),
+            connectedDeviceInfo: document.getElementById('connected-device-info'),
+            deviceName: document.getElementById('device-name'),
+            deviceAddress: document.getElementById('device-address'),
+            deviceState: document.getElementById('device-state'),
+            serialApiStatus: document.getElementById('serial-api-status'),
+            
+            // WebSocket控制
+            connectWsBtn: document.getElementById('connect-ws-btn'),
+            wsUrl: document.getElementById('ws-url'),
+            deviceId: document.getElementById('device-id'),
+            wsStatus: document.getElementById('ws-status'),
+            
+            // 命令和数据发送
+            commandInput: document.getElementById('command-input'),
+            sendCommandBtn: document.getElementById('send-command-btn'),
+            atCommandBtns: document.querySelectorAll('.at-command-btn'),
+            dataInput: document.getElementById('data-input'),
+            sendDataBtn: document.getElementById('send-data-btn'),
+            appendCrlf: document.getElementById('append-crlf'),
+            hexMode: document.getElementById('hex-mode'),
+            sendEncoding: document.getElementById('send-encoding'),
+            receiveEncoding: document.getElementById('receive-encoding'),
+            testGbkBtn: document.getElementById('test-gbk-btn'),
+            encodingInfo: document.getElementById('encoding-info'),
+            
+            // 日志控制按钮
+            clearLogBtn: document.getElementById('clear-log-btn'),
+            autoScrollToggle: document.getElementById('auto-scroll-toggle'),
+            
+            // GBK测试弹窗
+            gbkTestModal: document.getElementById('gbk-test-modal'),
+            closeGbkTestModal: document.getElementById('close-gbk-test-btn'),
+            gbkTestSamples: document.querySelectorAll('.gbk-test-sample'),
+            customGbkTestBtn: document.getElementById('custom-gbk-test-btn'),
+            
+            // 状态显示
+            connectionStatus: document.getElementById('connection-status'),
+            connectionInfo: document.getElementById('connection-info'),
+            
+            // 通知
+            notification: document.getElementById('notification'),
+            notificationTitle: document.getElementById('notification-title'),
+            notificationMessage: document.getElementById('notification-message'),
+            notificationIcon: document.getElementById('notification-icon'),
+            closeNotificationBtn: document.getElementById('close-notification-btn'),
+            
+            // 数据日志
+            dataLog: document.getElementById('data-log')
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            log('JDY-31-SPP 蓝牙工具已启动 (支持GBK编码)', 'info');
+            updateSerialStatus('disconnected', '未连接');
+            updateWsStatus('disconnected', '未连接');
+            updateConnectionInfo('未连接设备 | 编码: GBK');
+            log('请先在系统蓝牙设置中配对JDY-31-SPP设备，然后点击"连接设备"按钮', 'info');
+            setupEventListeners();
+            checkBluetoothAvailability();
+            checkIconvAvailability();
+        });
+
+        // 设备准备就绪
+        document.addEventListener('deviceready', () => {
+            log('设备准备就绪', 'info');
+            checkBluetoothAvailability();
+        });
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 蓝牙连接按钮
+            elements.connectSerialBtn.addEventListener('click', toggleBluetoothConnection);
+
+            // 扫描设备按钮
+            elements.scanDevicesBtn.addEventListener('click', scanBluetoothDevices);
+
+            // 设备列表选择
+            elements.deviceList.addEventListener('change', handleDeviceSelect);
+
+            // WebSocket连接按钮
+            elements.connectWsBtn.addEventListener('click', toggleWebSocketConnection);
+
+            // AT命令发送按钮
+            elements.sendCommandBtn.addEventListener('click', sendATCommand);
+            elements.commandInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendATCommand();
+            });
+
+            // 数据发送按钮
+            elements.sendDataBtn.addEventListener('click', sendData);
+            elements.dataInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendData();
+            });
+
+            // AT命令快捷按钮
+            elements.atCommandBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    elements.commandInput.value = btn.textContent;
+                    elements.commandInput.focus();
+                });
+            });
+
+            // 日志控制按钮
+            elements.clearLogBtn.addEventListener('click', clearLog);
+            elements.autoScrollToggle.addEventListener('click', toggleAutoScroll);
+            elements.testGbkBtn.addEventListener('click', openGbkTestModal);
+
+            // GBK测试弹窗
+            elements.closeGbkTestModal.addEventListener('click', closeGbkTestModal);
+            elements.gbkTestSamples.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const text = e.currentTarget.querySelector('.font-medium').textContent;
+                    runGbkTest(text);
+                });
+            });
+            elements.customGbkTestBtn.addEventListener('click', () => {
+                const customText = prompt('请输入要测试的文本:', '中文测试');
+                if (customText) {
+                    runGbkTest(customText);
+                }
+            });
+
+            // 通知关闭按钮
+            elements.closeNotificationBtn.addEventListener('click', hideNotification);
+        }
+
+        // 检查蓝牙可用性
+        function checkBluetoothAvailability() {
+            if (typeof bluetoothSerial !== 'undefined') {
+                log('蓝牙串口插件可用', 'info');
+                updateSerialApiStatus('可用');
+                
+                // 检查已配对的设备
+                bluetoothSerial.list(function(devices) {
+                    if (devices.length > 0) {
+                        log(`发现 ${devices.length} 个已配对的蓝牙设备`, 'info');
+                        populateDeviceList(devices);
+                    } else {
+                        log('未发现已配对的蓝牙设备', 'info');
+                    }
+                }, function(error) {
+                    log(`检查蓝牙设备时出错: ${error}`, 'warning');
+                });
+            } else {
+                log('蓝牙串口插件不可用', 'error');
+                updateSerialApiStatus('不可用');
+                showNotification('错误', '蓝牙串口插件不可用，请检查设备', 'error');
+            }
+        }
+
+        // 检查gbk.js可用性
+        function checkIconvAvailability() {
+            if (typeof GBK === 'undefined') {
+                log('gbk.js库加载失败，GBK编码可能无法正常工作', 'error');
+                elements.encodingInfo.innerHTML = 'GBK编码状态: <span class="text-red-500">库加载失败</span>';
+                showNotification('警告', 'GBK编码库加载失败，请刷新页面重试', 'warning');
+                return false;
+            }
+            
+            try {
+                // 测试GBK编码
+                const testText = '测试';
+                log(`开始GBK编码测试，测试文本: "${testText}"`, 'debug');
+                
+                // 使用GBK.encode进行编码
+                const gbkEncoded = GBK.encode(testText);
+                log(`GBK编码结果: [${Array.from(gbkEncoded)}] (${gbkEncoded.length} 字节)`, 'debug');
+                
+                // 使用GBK.decode进行解码
+                const gbkDecoded = GBK.decode(gbkEncoded);
+                log(`GBK解码结果: "${gbkDecoded}"`, 'debug');
+                log(`解码后长度: ${gbkDecoded.length}，原始长度: ${testText.length}`, 'debug');
+                log(`解码后与原始文本是否匹配: ${gbkDecoded === testText}`, 'debug');
+                
+                if (gbkDecoded === testText) {
+                    log('gbk.js库已成功加载，GBK编码功能正常', 'success');
+                    elements.encodingInfo.innerHTML = 'GBK编码状态: <span class="text-green-500">正常</span>';
+                    
+                    // 显示支持的编码列表
+                    const supportedEncodings = ['GBK', 'UTF-8'];
+                    
+                    log(`支持的编码: ${supportedEncodings.join(', ')}`, 'debug');
+                    return true;
+                } else {
+                    log('GBK编码测试失败', 'error');
+                    elements.encodingInfo.innerHTML = 'GBK编码状态: <span class="text-yellow-500">测试失败</span>';
+                    return false;
+                }
+            } catch (error) {
+                log(`检查gbk.js时出错: ${error.message}`, 'error');
+                elements.encodingInfo.innerHTML = 'GBK编码状态: <span class="text-red-500">错误</span>';
+                return false;
+            }
+        }
+
+        // 扫描蓝牙设备
+        function scanBluetoothDevices() {
+            log('正在扫描蓝牙设备...', 'info');
+            updateSerialStatus('scanning', '扫描中...');
+            
+            if (typeof bluetoothSerial !== 'undefined') {
+                bluetoothSerial.list(function(devices) {
+                    log(`发现 ${devices.length} 个蓝牙设备`, 'info');
+                    populateDeviceList(devices);
+                    updateSerialStatus('disconnected', '未连接');
+                    showNotification('成功', `发现 ${devices.length} 个蓝牙设备`, 'success');
+                }, function(error) {
+                    log(`扫描设备失败: ${error}`, 'error');
+                    updateSerialStatus('disconnected', '扫描失败');
+                    showNotification('错误', `扫描设备失败: ${error}`, 'error');
+                });
+            }
+        }
+
+        // 填充设备列表
+        function populateDeviceList(devices) {
+            const deviceList = elements.deviceList;
+            deviceList.innerHTML = '<option value="">请选择设备</option>';
+            
+            devices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.id;
+                option.textContent = `${device.name || '未知设备'} (${device.id})`;
+                deviceList.appendChild(option);
+            });
+        }
+
+        // 处理设备选择
+        function handleDeviceSelect() {
+            const selectedDeviceId = elements.deviceList.value;
+            if (selectedDeviceId) {
+                log(`选择设备: ${selectedDeviceId}`, 'info');
+            }
+        }
+
+        // 切换蓝牙连接
+        function toggleBluetoothConnection() {
+            if (bluetoothConnected) {
+                disconnectBluetooth();
+            } else {
+                connectBluetooth();
+            }
+        }
+
+        // 连接蓝牙设备
+        function connectBluetooth() {
+            const selectedDeviceId = elements.deviceList.value;
+            if (!selectedDeviceId) {
+                showNotification('错误', '请先选择蓝牙设备', 'error');
+                return;
+            }
+            
+            log(`正在连接蓝牙设备: ${selectedDeviceId}`, 'info');
+            updateSerialStatus('connecting', '连接中...');
+            
+            if (typeof bluetoothSerial !== 'undefined') {
+                bluetoothSerial.connect(selectedDeviceId, function() {
+                    log('蓝牙设备连接成功', 'success');
+                    bluetoothConnected = true;
+                    bluetoothDeviceId = selectedDeviceId;
+                    
+                    // 更新状态
+                    updateSerialStatus('connected', '已连接');
+                    updateConnectionStatus('connected', '已连接蓝牙设备');
+                    updateEncodingInfo();
+                    
+                    // 显示设备信息
+                    showConnectedDeviceInfo({ id: selectedDeviceId });
+                    
+                    // 开始读取数据
+                    startBluetoothRead();
+                    
+                    showNotification('成功', '蓝牙设备连接成功', 'success');
+                    
+                    // 发送AT测试命令
+                    setTimeout(() => {
+                        sendATCommandInternal('AT');
+                    }, 500);
+                    
+                }, function(error) {
+                    log(`连接蓝牙设备失败: ${error}`, 'error');
+                    updateSerialStatus('disconnected', '连接失败');
+                    showNotification('错误', `连接失败: ${error}`, 'error');
+                });
+            }
+        }
+
+        // 断开蓝牙连接
+        function disconnectBluetooth() {
+            if (bluetoothConnected && bluetoothDeviceId) {
+                log('正在断开蓝牙连接...', 'info');
+                updateSerialStatus('disconnecting', '断开中...');
+                
+                if (typeof bluetoothSerial !== 'undefined') {
+                    bluetoothSerial.disconnect(function() {
+                        log('蓝牙连接已断开', 'info');
+                        bluetoothConnected = false;
+                        bluetoothDeviceId = null;
+                        
+                        updateSerialStatus('disconnected', '未连接');
+                        updateConnectionStatus('disconnected', '未连接');
+                        updateEncodingInfo();
+                        
+                        elements.connectedDeviceInfo.classList.add('hidden');
+                        
+                        showNotification('成功', '蓝牙连接已断开', 'success');
+                    }, function(error) {
+                        log(`断开蓝牙连接失败: ${error}`, 'error');
+                        updateSerialStatus('disconnected', '断开失败');
+                    });
+                }
+            }
+        }
+
+        // 开始蓝牙读取
+        function startBluetoothRead() {
+            if (typeof bluetoothSerial !== 'undefined' && bluetoothConnected) {
+                bluetoothSerial.subscribe('\n', function(data) {
+                    processReceivedData(data);
+                }, function(error) {
+                    log(`订阅蓝牙数据失败: ${error}`, 'error');
+                });
+            }
+        }
+
+        // 处理接收到的数据 (支持GBK解码)
+        function processReceivedData(data) {
+            try {
+                // 获取当前选择的解码方式
+                const decodeType = elements.receiveEncoding.value;
+                
+                // 解码数据
+                let decodedText = '';
+                
+                if (decodeType === 'auto') {
+                    // 尝试自动检测编码
+                    decodedText = autoDetectEncoding(data);
+                } else {
+                    // 使用指定编码解码
+                    decodedText = decodeWithEncoding(data, decodeType);
+                }
+                
+                // 显示接收到的数据
+                const decodeInfo = decodeType === 'auto' ? '' : ` (${decodeType})`;
+                log(`接收数据${decodeInfo}: ${decodedText.trim()}`, 'data');
+                
+                // 如果WebSocket已连接，转发数据到服务器
+                if (websocket && websocket.readyState === WebSocket.OPEN) {
+                    const message = {
+                        type: 'command_response',
+                        data: decodedText.trim(),
+                        encoding: elements.receiveEncoding.value,
+                        timestamp: Date.now(),
+                        device_id: elements.deviceId.value
+                    };
+                    
+                    websocket.send(JSON.stringify(message));
+                    log(`转发数据到服务器: ${decodedText.trim()}`, 'debug');
+                }
+                
+            } catch (error) {
+                log(`处理接收数据时出错: ${error.message}`, 'error');
+            }
+        }
+
+        // 自动检测编码
+        function autoDetectEncoding(data) {
+            try {
+                // 首先尝试UTF-8
+                try {
+                    const utf8Text = decodeWithEncoding(data, 'utf8');
+                    // 检查是否包含UTF-8无效字符（如乱码）
+                    if (!utf8Text.includes('�') && utf8Text.length > 0) {
+                        return utf8Text;
+                    }
+                } catch (e) {
+                    // UTF-8解码失败，继续尝试
+                }
+                
+                // 尝试GBK
+                try {
+                    const gbkText = decodeWithEncoding(data, 'gbk');
+                    if (gbkText && gbkText.length > 0) {
+                        return gbkText;
+                    }
+                } catch (e) {
+                    // GBK解码失败，继续尝试
+                }
+                
+                // 尝试GB2312
+                try {
+                    const gb2312Text = decodeWithEncoding(data, 'gb2312');
+                    if (gb2312Text && gb2312Text.length > 0) {
+                        return gb2312Text;
+                    }
+                } catch (e) {
+                    // GB2312解码失败
+                }
+                
+                // 所有解码都失败，返回原始文本
+                return data;
+                
+            } catch (error) {
+                log(`自动检测编码失败: ${error.message}`, 'warning');
+                return data;
+            }
+        }
+
+        // 使用指定编码解码
+        function decodeWithEncoding(data, encoding) {
+            try {
+                if (encoding === 'utf8') {
+                    // 使用内置TextDecoder进行UTF-8解码
+                    const textDecoder = new TextDecoder('utf-8');
+                    return textDecoder.decode(new TextEncoder().encode(data));
+                } else if (encoding === 'gbk' || encoding === 'gb2312') {
+                    // 使用gbk.js进行GBK/GB2312解码
+                    if (typeof GBK !== 'undefined') {
+                        // 将字符串转换为Uint8Array
+                        const encoder = new TextEncoder();
+                        const uint8Array = encoder.encode(data);
+                        // 使用GBK.decode进行解码
+                        return GBK.decode(uint8Array);
+                    } else {
+                        throw new Error('gbk.js库未加载');
+                    }
+                } else {
+                    throw new Error(`不支持的编码: ${encoding}`);
+                }
+            } catch (error) {
+                log(`${encoding.toUpperCase()}解码失败: ${error.message}`, 'warning');
+                throw error;
+            }
+        }
+
+        // 使用指定编码编码数据
+        function encodeWithEncoding(text, encoding) {
+            try {
+                log(`开始${encoding.toUpperCase()}编码: "${text}"`, 'debug');
+                
+                if (encoding === 'utf8') {
+                    // 使用内置TextEncoder进行UTF-8编码
+                    const textEncoder = new TextEncoder();
+                    const encoded = textEncoder.encode(text);
+                    log(`UTF-8编码完成: ${encoded.byteLength} 字节`, 'debug');
+                    return encoded;
+                } else if (encoding === 'gbk' || encoding === 'gb2312') {
+                    // 使用gbk.js进行GBK/GB2312编码
+                    if (typeof GBK !== 'undefined') {
+                        // 使用GBK.encode进行编码
+                        const encoded = GBK.encode(text);
+                        log(`${encoding.toUpperCase()}编码完成: ${encoded.length} 字节`, 'debug');
+                        
+                        // 验证编码（可选）
+                        try {
+                            const decodedText = GBK.decode(encoded);
+                            if (decodedText === text) {
+                                log(`${encoding.toUpperCase()}编码验证成功`, 'debug');
+                            } else {
+                                log(`${encoding.toUpperCase()}编码验证失败: 解码后文本不匹配`, 'warning');
+                            }
+                        } catch (verifyError) {
+                            log(`${encoding.toUpperCase()}编码验证失败: ${verifyError.message}`, 'warning');
+                        }
+                        
+                        // 确保返回Uint8Array，以便bluetoothSerial.write()能够正确处理
+                        return new Uint8Array(encoded);
+                    } else {
+                        throw new Error('gbk.js库未加载');
+                    }
+                } else {
+                    throw new Error(`不支持的编码: ${encoding}`);
+                }
+            } catch (error) {
+                log(`${encoding.toUpperCase()}编码失败: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        // 发送AT命令
+        async function sendATCommand() {
+            const command = elements.commandInput.value.trim();
+            
+            if (!command) {
+                showNotification('警告', '请输入AT命令', 'warning');
+                return;
+            }
+            
+            await sendATCommandInternal(command);
+            
+            // 清空输入框
+            elements.commandInput.value = '';
+        }
+
+        // 内部发送AT命令
+        async function sendATCommandInternal(command) {
+            if (!bluetoothConnected) {
+                log('无法发送命令：未连接到蓝牙设备', 'error');
+                showNotification('错误', '未连接到蓝牙设备', 'error');
+                return false;
+            }
+            
+            try {
+                // AT命令始终使用UTF-8编码
+                const commandWithEOL = command + '\r\n';
+                log(`发送AT命令: ${command}`, 'command');
+                
+                if (typeof bluetoothSerial !== 'undefined') {
+                    bluetoothSerial.write(commandWithEOL, function() {
+                        log(`AT命令发送成功`, 'debug');
+                    }, function(error) {
+                        log(`发送AT命令失败: ${error}`, 'error');
+                    });
+                }
+                
+                // 对于特定命令添加提示
+                if (command === 'AT+RESET') {
+                    showNotification('信息', 'JDY-31-SPP模块正在重启...', 'info');
+                } else if (command.startsWith('AT+NAME=')) {
+                    showNotification('信息', '设备名称已更改，需要重新连接', 'info');
+                } else if (command.startsWith('AT+BAUD')) {
+                    showNotification('信息', '波特率已更改，需要重新连接', 'info');
+                }
+                
+                return true;
+            } catch (error) {
+                log(`发送命令时出错: ${error.message}`, 'error');
+                showNotification('错误', `发送命令失败: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // 发送数据
+        async function sendData() {
+            const data = elements.dataInput.value;
+            
+            if (!data) {
+                showNotification('警告', '请输入要发送的数据', 'warning');
+                return;
+            }
+            
+            if (!bluetoothConnected) {
+                log('无法发送数据：未连接到蓝牙设备', 'error');
+                showNotification('错误', '未连接到蓝牙设备', 'error');
+                return false;
+            }
+            
+            try {
+                // HEX模式处理
+                if (elements.hexMode.checked) {
+                    try {
+                        // 移除空格并转换为字节数组
+                        const hexString = data.replace(/\s/g, '');
+                        const bytes = [];
+                        
+                        for (let i = 0; i < hexString.length; i += 2) {
+                            bytes.push(parseInt(hexString.substr(i, 2), 16));
+                        }
+                        
+                        if (typeof bluetoothSerial !== 'undefined') {
+                            bluetoothSerial.write(new Uint8Array(bytes).buffer, function() {
+                                log(`HEX数据发送成功`, 'debug');
+                            }, function(error) {
+                                log(`发送HEX数据失败: ${error}`, 'error');
+                            });
+                        }
+                        log(`已发送HEX数据: ${data}`, 'command');
+                    } catch (hexError) {
+                        log(`HEX格式错误: ${hexError.message}`, 'error');
+                        showNotification('错误', 'HEX格式错误，请检查输入', 'error');
+                        return false;
+                    }
+                } else {
+                    // 普通文本模式
+                    let textToSend = data;
+                    
+                    // 添加回车换行
+                    if (elements.appendCrlf.checked) {
+                        textToSend += '\r\n';
+                    }
+                    
+                    // 获取当前选择的编码
+                    const encodingType = elements.sendEncoding.value;
+                    
+                    // 编码数据
+                    const encodedData = encodeWithEncoding(textToSend, encodingType);
+                    
+                    // 发送数据
+                    if (typeof bluetoothSerial !== 'undefined') {
+                        bluetoothSerial.write(encodedData.buffer, function() {
+                            log(`${encodingType.toUpperCase()}数据发送成功`, 'debug');
+                        }, function(error) {
+                            log(`发送${encodingType.toUpperCase()}数据失败: ${error}`, 'error');
+                        });
+                    }
+                    
+                    log(`已发送${encodingType.toUpperCase()}数据: ${data}`, 'command');
+                    
+                    // 如果WebSocket已连接，转发数据到服务器
+                    if (websocket && websocket.readyState === WebSocket.OPEN) {
+                        const message = {
+                            type: 'command',
+                            data: data,
+                            encoding: encodingType,
+                            timestamp: Date.now(),
+                            device_id: elements.deviceId.value
+                        };
+                        
+                        websocket.send(JSON.stringify(message));
+                        log(`转发数据到服务器: ${data}`, 'debug');
+                    }
+                }
+                
+                // 清空输入框
+                elements.dataInput.value = '';
+                
+                return true;
+            } catch (error) {
+                log(`发送数据时出错: ${error.message}`, 'error');
+                showNotification('错误', `发送数据失败: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // 切换WebSocket连接
+        function toggleWebSocketConnection() {
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                disconnectWebSocket();
+            } else {
+                connectWebSocket();
+            }
+        }
+
+        // 连接WebSocket
+        function connectWebSocket() {
+            const wsUrl = elements.wsUrl.value.trim();
+            if (!wsUrl) {
+                showNotification('错误', '请输入WebSocket服务器地址', 'error');
+                return;
+            }
+            
+            log(`正在连接WebSocket服务器: ${wsUrl}`, 'info');
+            updateWsStatus('connecting', '连接中...');
+            
+            try {
+                websocket = new WebSocket(wsUrl);
+                
+                websocket.onopen = function() {
+                    log('WebSocket连接成功', 'success');
+                    updateWsStatus('connected', '已连接');
+                    showNotification('成功', 'WebSocket连接成功', 'success');
+                    
+                    // 发送设备信息
+                    const deviceInfo = {
+                        type: 'device_info',
+                        device_id: elements.deviceId.value,
+                        timestamp: Date.now()
+                    };
+                    websocket.send(JSON.stringify(deviceInfo));
+                };
+                
+                websocket.onmessage = function(event) {
+                    try {
+                        const message = JSON.parse(event.data);
+                        if (message.type === 'command') {
+                            // 接收服务器命令并发送到串口
+                            log(`执行服务器命令: ${message.data} (编码: ${message.encoding || 'utf8'})`, 'command');
+                            elements.dataInput.value = message.data;
+                            elements.sendEncoding.value = message.encoding || 'utf8';
+                            sendData();
+                        }
+                    } catch (error) {
+                        log(`处理WebSocket消息失败: ${error.message}`, 'warning');
+                    }
+                };
+                
+                websocket.onclose = function() {
+                    log('WebSocket连接已关闭', 'info');
+                    updateWsStatus('disconnected', '已关闭');
+                    
+                    // 自动重连
+                    if (settings.autoReconnectWebsocket) {
+                        scheduleWsReconnect();
+                    }
+                };
+                
+                websocket.onerror = function(error) {
+                    log(`WebSocket错误: ${error}`, 'error');
+                    updateWsStatus('error', '连接错误');
+                };
+                
+            } catch (error) {
+                log(`WebSocket连接失败: ${error.message}`, 'error');
+                updateWsStatus('disconnected', '连接失败');
+                showNotification('错误', `WebSocket连接失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 断开WebSocket
+        function disconnectWebSocket() {
+            if (websocket) {
+                log('正在断开WebSocket连接...', 'info');
+                updateWsStatus('disconnecting', '断开中...');
+                
+                websocket.close();
+                websocket = null;
+                
+                updateWsStatus('disconnected', '已关闭');
+                showNotification('信息', 'WebSocket连接已断开', 'info');
+            }
+        }
+
+        // 计划WebSocket重连
+        function scheduleWsReconnect() {
+            if (wsReconnectTimer) {
+                clearTimeout(wsReconnectTimer);
+            }
+            
+            log(`将在 ${settings.reconnectInterval} 秒后尝试重新连接WebSocket`, 'info');
+            
+            wsReconnectTimer = setTimeout(function() {
+                connectWebSocket();
+            }, settings.reconnectInterval * 1000);
+        }
+
+        // 运行GBK测试
+        function runGbkTest(text) {
+            if (!bluetoothConnected) {
+                showNotification('错误', '请先连接蓝牙设备', 'error');
+                return;
+            }
+            
+            log(`开始GBK编码测试，测试文本: "${text}"`, 'info');
+            
+            // 使用GBK编码发送测试数据
+            elements.dataInput.value = text;
+            elements.sendEncoding.value = 'gbk';
+            sendData();
+            
+            closeGbkTestModal();
+        }
+
+        // 打开GBK测试弹窗
+        function openGbkTestModal() {
+            elements.gbkTestModal.classList.remove('hidden');
+            elements.gbkTestModal.classList.add('flex');
+        }
+
+        // 关闭GBK测试弹窗
+        function closeGbkTestModal() {
+            elements.gbkTestModal.classList.remove('flex');
+            elements.gbkTestModal.classList.add('hidden');
+        }
+
+        // 显示连接设备信息
+        function showConnectedDeviceInfo(device) {
+            elements.connectedDeviceInfo.classList.remove('hidden');
+            elements.deviceAddress.textContent = device.id || '未知';
+            
+            // 尝试获取设备名称
+            if (typeof bluetoothSerial !== 'undefined') {
+                bluetoothSerial.list(function(devices) {
+                    const selectedDevice = devices.find(d => d.id === device.id);
+                    if (selectedDevice) {
+                        elements.deviceName.textContent = selectedDevice.name || '未知设备';
+                    }
+                });
+            }
+        }
+
+        // 日志函数
+        function log(message, level = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            
+            let levelClass = '';
+            switch (level) {
+                case 'success':
+                    levelClass = 'text-success';
+                    break;
+                case 'error':
+                    levelClass = 'text-danger';
+                    break;
+                case 'warning':
+                    levelClass = 'text-warning';
+                    break;
+                case 'info':
+                    levelClass = 'text-info';
+                    break;
+                case 'command':
+                    levelClass = 'text-accent';
+                    break;
+                case 'data':
+                    levelClass = 'text-white';
+                    break;
+                case 'debug':
+                    levelClass = 'text-gray-500';
+                    break;
+                default:
+                    levelClass = 'text-gray-300';
+            }
+            
+            logEntry.className = levelClass;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            
+            elements.dataLog.appendChild(logEntry);
+            
+            // 自动滚动
+            if (isAutoScrollEnabled) {
+                elements.dataLog.scrollTop = elements.dataLog.scrollHeight;
+            }
+        }
+
+        // 清除日志
+        function clearLog() {
+            elements.dataLog.innerHTML = '<div class="text-gray-500">日志已清除</div>';
+        }
+
+        // 切换自动滚动
+        function toggleAutoScroll() {
+            isAutoScrollEnabled = !isAutoScrollEnabled;
+            elements.autoScrollToggle.innerHTML = isAutoScrollEnabled 
+                ? '<i class="fa fa-arrow-down"></i> 自动滚动' 
+                : '<i class="fa fa-arrow-down"></i> 手动滚动';
+            
+            log(`自动滚动已${isAutoScrollEnabled ? '启用' : '禁用'}`, 'info');
+        }
+
+        // 更新串口状态
+        function updateSerialStatus(status, message) {
+            const statusElement = elements.serialStatus;
+            const statusDot = statusElement.querySelector('span:first-child');
+            const statusText = statusElement.querySelector('span:last-child');
+            
+            switch (status) {
+                case 'connected':
+                    statusDot.className = 'inline-block w-3 h-3 rounded-full bg-success mr-2';
+                    statusText.textContent = message || '已连接';
+                    break;
+                case 'connecting':
+                    statusDot.className = 'inline-block w-3 h-3 rounded-full bg-warning mr-2';
+                    statusText.textContent = message || '连接中...';
+                    break;
+                case 'disconnecting':
+                    statusDot.className = 'inline-block w-3 h-3 rounded-full bg-warning mr-2';
+                    statusText.textContent = message || '断开中...';
+                    break;
+                case 'scanning':
+                    statusDot.className = 'inline-block w-3 h-3 rounded-full bg-info mr-2';
+                    statusText.textContent = message || '扫描中...';
+                    break;
+                case 'error':
+                    statusDot.className = 'inline-block w-3 h-3 rounded-full bg-danger mr-2';
+                    statusText.textContent = message || '错误';
+                    break;
+                default:
+                    statusDot.className = 'inline-block w-3 h-3 rounded-full bg-gray-500 mr-2';
+                    statusText.textContent = message || '未连接';
+            }
+        }
+
+        // 更新WebSocket状态
+        function updateWsStatus(status, message) {
+            const statusElement = elements.wsStatus;
+            const statusDot = statusElement.querySelector('span:first-child');
+            const statusText = statusElement.querySelector('span:last-child');
+            
+            switch (status) {
+                case 'connected':
+                    statusDot.className = 'inline-block w-3 h-3 rounded-full bg-success mr-2';
+                    statusText.textContent = message || '已连接';
+                    break;
+                case 'connecting':
+                    statusDot.className = 'inline-block w-3 h-3 rounded-full bg-warning mr-2';
+                    statusText.textContent = message || '连接中...';
+                    break;
+                case 'disconnecting':
+                    statusDot.className = 'inline-block w-3 h-3 rounded-full bg-warning mr-2';
+                    statusText.textContent = message || '断开中...';
+                    break;
+                case 'error':
+                    statusDot.className = 'inline-block w-3 h-3 rounded-full bg-danger mr-2';
+                    statusText.textContent = message || '错误';
+                    break;
+                default:
+                    statusDot.className = 'inline-block w-3 h-3 rounded-full bg-gray-500 mr-2';
+                    statusText.textContent = message || '未连接';
+            }
+        }
+
+        // 更新连接状态
+        function updateConnectionStatus(status, message) {
+            const statusElement = elements.connectionStatus;
+            const statusDot = statusElement.querySelector('span:first-child');
+            const statusText = statusElement.querySelector('span:last-child');
+            
+            switch (status) {
+                case 'connected':
+                    statusDot.className = 'inline-block w-3 h-3 rounded-full bg-success';
+                    statusText.textContent = message || '已连接';
+                    break;
+                default:
+                    statusDot.className = 'inline-block w-3 h-3 rounded-full bg-gray-500';
+                    statusText.textContent = message || '未连接';
+            }
+        }
+
+        // 更新连接信息
+        function updateConnectionInfo(info) {
+            elements.connectionInfo.textContent = info;
+        }
+
+        // 更新串口API状态
+        function updateSerialApiStatus(status) {
+            const statusElement = elements.serialApiStatus.querySelector('span');
+            
+            switch (status) {
+                case 'available':
+                    statusElement.className = 'text-success';
+                    statusElement.textContent = '可用';
+                    break;
+                case 'unavailable':
+                    statusElement.className = 'text-danger';
+                    statusElement.textContent = '不可用';
+                    break;
+                default:
+                    statusElement.className = 'text-gray-500';
+                    statusElement.textContent = '检查中...';
+            }
+        }
+
+        // 更新编码信息
+        function updateEncodingInfo() {
+            const sendEncoding = elements.sendEncoding.value;
+            const receiveEncoding = elements.receiveEncoding.value;
+            updateConnectionInfo(`蓝牙设备: ${bluetoothConnected ? '已连接' : '未连接'} | 发送: ${sendEncoding.toUpperCase()} | 接收: ${receiveEncoding.toUpperCase()}`);
+        }
+
+        // 显示通知
+        function showNotification(title, message, type = 'info') {
+            const notification = elements.notification;
+            const notificationTitle = elements.notificationTitle;
+            const notificationMessage = elements.notificationMessage;
+            const notificationIcon = elements.notificationIcon;
+            
+            notificationTitle.textContent = title;
+            notificationMessage.textContent = message;
+            
+            // 设置图标
+            switch (type) {
+                case 'success':
+                    notificationIcon.innerHTML = '<i class="fa fa-check-circle text-success"></i>';
+                    break;
+                case 'error':
+                    notificationIcon.innerHTML = '<i class="fa fa-exclamation-circle text-danger"></i>';
+                    break;
+                case 'warning':
+                    notificationIcon.innerHTML = '<i class="fa fa-exclamation-triangle text-warning"></i>';
+                    break;
+                default:
+                    notificationIcon.innerHTML = '<i class="fa fa-info-circle text-info"></i>';
+            }
+            
+            // 显示通知
+            notification.classList.remove('translate-x-full');
+            
+            // 自动隐藏
+            setTimeout(hideNotification, 3000);
+        }
+
+        // 隐藏通知
+        function hideNotification() {
+            const notification = elements.notification;
+            notification.classList.add('translate-x-full');
+        }
+    </script>
+</body>
+</html>
