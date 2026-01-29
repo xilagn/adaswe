@@ -96,9 +96,20 @@ jobs:
     - name: Build Android APK
       run: cordova build android --release
 
+    - name: Debug - Check build output directory
+      run: |
+        # Check the build output directory structure
+        ls -la platforms/android/app/build/outputs/
+        ls -la platforms/android/app/build/outputs/apk/
+        ls -la platforms/android/app/build/outputs/apk/release/
+        # Look for APK files in common locations
+        find platforms/android -name "*.apk"
+
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: jdy31-spp-tool
-        path: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
+        path: |
+          platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
+          platforms/android/app/build/outputs/apk/release/app-release.apk
         retention-days: 30
