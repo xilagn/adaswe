@@ -28,12 +28,15 @@ jobs:
 
     - name: Install Android SDK
       uses: android-actions/setup-android@v3
-      with:
-        packages: platforms;android-34,build-tools;35.0.0,platform-tools,tools,ndk;25.1.8937393,cmake;3.22.1
-        accept-android-sdk-licenses: true
 
-    - name: Explicitly install Android SDK 34
+    - name: Install required Android packages
       run: |
+        # Use sdkmanager to install required packages
+        yes | sdkmanager "platforms;android-34"
+        yes | sdkmanager "build-tools;35.0.0"
+        yes | sdkmanager "platform-tools"
+        yes | sdkmanager "tools"
+        yes | sdkmanager "tools:latest"
         # Verify installation
         ls -la $ANDROID_HOME/platforms/
         ls -la $ANDROID_HOME/build-tools/
