@@ -46,14 +46,23 @@ jobs:
       run: npm install
 
     - name: Add Android platform
-      run: cordova platform add android@12.0.0  # 固定Cordova Android版本，提升兼容性
+      run: cordova platform add android@12.0.0
 
-    - name: Fix Gradle version (解决XmlParser报错)
+    - name: Initialize Gradle wrapper (生成配置文件)
       run: |
         cd platforms/android
-        # 替换为兼容的Gradle 7.5版本
+        # 生成Gradle wrapper文件，指定版本7.5
+        gradle wrapper --gradle-version 7.5 --distribution-type all
+        # 确认文件已生成
+        ls -la gradle/wrapper/
+        cd ../..
+
+    - name: Fix Gradle version (确保版本正确)
+      run: |
+        cd platforms/android
+        # 修改wrapper配置为7.5
         sed -i 's/distributionUrl=.*/distributionUrl=https\:\/\/services.gradle.org\/distributions\/gradle-7.5-all.zip/' gradle/wrapper/gradle-wrapper.properties
-        # 确认修改结果
+        # 验证修改
         cat gradle/wrapper/gradle-wrapper.properties
         cd ../..
 
