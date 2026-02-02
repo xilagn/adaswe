@@ -94,7 +94,9 @@ jobs:
         echo "ANDROID_HOME=$ANDROID_HOME"
 
     - name: Build Android APK
-      run: cordova build android --release
+      run: |
+        # Force Cordova to build APK instead of AAB
+        cordova build android --release -- --packageType=apk
 
     - name: Debug - Check build output directory
       run: |
