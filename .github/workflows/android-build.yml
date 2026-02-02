@@ -42,11 +42,53 @@ jobs:
     - name: Install Cordova CLI
       run: npm install -g cordova
 
+    - name: Verify project structure
+      run: |
+        echo "Verifying project structure..."
+        echo "Current directory: $(pwd)"
+        ls -la
+        # 检查必要的文件是否存在
+        if [ -f "package.json" ]; then
+          echo "package.json exists"
+          cat package.json | head -30
+        else
+          echo "ERROR: package.json not found!"
+          exit 1
+        fi
+        if [ -f "config.xml" ]; then
+          echo "config.xml exists"
+          cat config.xml | head -30
+        else
+          echo "ERROR: config.xml not found!"
+          exit 1
+        fi
+        if [ -d "www" ]; then
+          echo "www directory exists"
+          ls -la www/
+        else
+          echo "ERROR: www directory not found!"
+          exit 1
+        fi
+
     - name: Install project dependencies
-      run: npm install
+      run: |
+        echo "Installing project dependencies..."
+        npm install || {
+          echo "npm install failed, trying with --legacy-peer-deps..."
+          npm install --legacy-peer-deps
+        }
+        echo "Dependencies installed"
+        npm list
 
     - name: Add Android platform
-      run: cordova platform add android
+      run: |
+        echo "Adding Android platform..."
+        cordova platform add android@14.0.1 || {
+          echo "Failed to add specific version, trying latest..."
+          cordova platform add android
+        }
+        echo "Android platform added"
+        cordova platform list
 
     - name: Install required Cordova plugins
       run: |
