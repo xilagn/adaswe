@@ -287,9 +287,50 @@ jobs:
         ls -la apk-artifacts/
         echo "=== DIAGNOSTIC COMPLETE ==="
 
+    - name: Locate and collect all APK files
+      run: |
+        echo "=== LOCATING ALL APK FILES ==="
+        # 创建一个专门的目录来存放APK文件
+        mkdir -p apk-artifacts/apk-files
+        # 搜索所有APK文件
+        apk_files=$(find . -name "*.apk" -type f | grep -v "node_modules")
+        if [ -n "$apk_files" ]; then
+          echo "Found APK files:"
+          echo "$apk_files"
+          # 复制所有APK文件到专门的目录
+          echo "Copying APK files to apk-artifacts/apk-files/..."
+          find . -name "*.apk" -type f | grep -v "node_modules" | xargs -I {} cp {} apk-artifacts/apk-files/ 2>/dev/null || true
+          echo "Copied APK files:"
+          ls -la apk-artifacts/apk-files/
+        else
+          echo "No APK files found!"
+        fi
+        # 检查常见的APK生成位置
+        echo "=== CHECKING COMMON APK LOCATIONS ==="
+        common_locations=("platforms/android/app/build/outputs/apk" "platforms/android/build/outputs/apk" "build/outputs/apk")
+        for location in "${common_locations[@]}"; do
+          if [ -d "$location" ]; then
+            echo "Found directory: $location"
+            ls -la "$location"
+            find "$location" -name "*.apk" -type f | head -10
+          else
+            echo "Directory not found: $location"
+          fi
+        done
+
     - name: Upload diagnostic artifacts
       uses: actions/upload-artifact@v4
       with:
         name: jdy31-build-diagnostics
         path: apk-artifacts/
         retention-days: 30
+
+    - name: Upload APK files
+      uses: actions/upload-artifact@v4
+      with:
+        name: jdy31-apk-files
+        path: |
+          apk-artifacts/apk-files/
+          **/*.apk
+        retention-days: 30
+        if-no-files-found: warn
