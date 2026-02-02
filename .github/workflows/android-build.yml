@@ -156,6 +156,30 @@ jobs:
           cat gradle/wrapper/gradle-wrapper.properties
           cd ../..
         fi
+        # 确保network_security_config.xml文件存在
+        echo "=== ENSURING NETWORK SECURITY CONFIG FILE EXISTS ==="
+        if [ -d "platforms/android" ]; then
+          cd platforms/android
+          # 确保app/src/main/res/xml目录存在
+          if [ ! -d "app/src/main/res/xml" ]; then
+            echo "Creating app/src/main/res/xml directory..."
+            mkdir -p app/src/main/res/xml
+          fi
+          # 创建network_security_config.xml文件
+          echo "Creating network_security_config.xml file..."
+          cat > app/src/main/res/xml/network_security_config.xml << 'EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">107.174.240.113</domain>
+    </domain-config>
+</network-security-config>
+EOF
+          echo "Created network_security_config.xml file:"
+          cat app/src/main/res/xml/network_security_config.xml
+          cd ../..
+        fi
 
     - name: Build Android APK (Debug) with explicit parameters
       run: |
