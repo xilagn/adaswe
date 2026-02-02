@@ -88,12 +88,26 @@ jobs:
     - name: Build Android APK (Debug)
       run: |
         # Build debug APK for testing and installation
-        cordova build android --debug -- --packageType=apk
+        echo "Building debug APK..."
+        echo "Current directory: $(pwd)"
+        ls -la
+        # 尝试构建debug版本
+        cordova build android --debug -- --packageType=apk || {
+          echo "Debug build failed, trying without packageType parameter..."
+          cordova build android --debug
+        }
+        echo "Debug build completed"
 
     - name: Build Android APK (Release)
       run: |
         # Build release APK for production
-        cordova build android --release -- --packageType=apk
+        echo "Building release APK..."
+        # 尝试构建release版本
+        cordova build android --release -- --packageType=apk || {
+          echo "Release build failed, trying without packageType parameter..."
+          cordova build android --release
+        }
+        echo "Release build completed"
 
     - name: Locate built APKs
       run: |
