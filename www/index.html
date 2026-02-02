@@ -1143,14 +1143,33 @@
                 };
                 
                 websocket.onerror = function(error) {
-                    log(`WebSocket错误: ${error}`, 'error');
+                    // 正确处理WebSocket错误对象
+                    let errorMessage = '未知错误';
+                    if (error && error.message) {
+                        errorMessage = error.message;
+                    } else if (error && typeof error === 'string') {
+                        errorMessage = error;
+                    } else if (error && error.event) {
+                        errorMessage = '连接被拒绝或服务器不可用';
+                    }
+                    log(`WebSocket错误: ${errorMessage}`, 'error');
                     updateWsStatus('error', '连接错误');
+                    showNotification('错误', `WebSocket连接失败: ${errorMessage}`, 'error');
                 };
                 
             } catch (error) {
-                log(`WebSocket连接失败: ${error.message}`, 'error');
+                // 正确处理连接错误
+                let errorMessage = '未知错误';
+                if (error && error.message) {
+                    errorMessage = error.message;
+                } else if (error && typeof error === 'string') {
+                    errorMessage = error;
+                } else {
+                    errorMessage = '连接被拒绝或服务器不可用';
+                }
+                log(`WebSocket连接失败: ${errorMessage}`, 'error');
                 updateWsStatus('disconnected', '连接失败');
-                showNotification('错误', `WebSocket连接失败: ${error.message}`, 'error');
+                showNotification('错误', `WebSocket连接失败: ${errorMessage}`, 'error');
             }
         }
 
