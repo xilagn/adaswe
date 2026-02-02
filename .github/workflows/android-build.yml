@@ -167,15 +167,14 @@ jobs:
           fi
           # 创建network_security_config.xml文件
           echo "Creating network_security_config.xml file..."
-          cat > app/src/main/res/xml/network_security_config.xml << 'EOF'
-<?xml version="1.0" encoding="utf-8"?>
-<network-security-config>
-    <base-config cleartextTrafficPermitted="true" />
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">107.174.240.113</domain>
-    </domain-config>
-</network-security-config>
-EOF
+          # 使用echo命令创建文件，避免here-document语法
+          echo '<?xml version="1.0" encoding="utf-8"?>' > app/src/main/res/xml/network_security_config.xml
+          echo '<network-security-config>' >> app/src/main/res/xml/network_security_config.xml
+          echo '    <base-config cleartextTrafficPermitted="true" />' >> app/src/main/res/xml/network_security_config.xml
+          echo '    <domain-config cleartextTrafficPermitted="true">' >> app/src/main/res/xml/network_security_config.xml
+          echo '        <domain includeSubdomains="true">107.174.240.113</domain>' >> app/src/main/res/xml/network_security_config.xml
+          echo '    </domain-config>' >> app/src/main/res/xml/network_security_config.xml
+          echo '</network-security-config>' >> app/src/main/res/xml/network_security_config.xml
           echo "Created network_security_config.xml file:"
           cat app/src/main/res/xml/network_security_config.xml
           cd ../..
