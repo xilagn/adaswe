@@ -289,34 +289,40 @@ jobs:
 
     - name: Locate and collect all APK files
       run: |
+        set -x  # 启用详细输出
         echo "=== LOCATING ALL APK FILES ==="
+        # 确保apk-artifacts目录存在
+        mkdir -p apk-artifacts
         # 创建一个专门的目录来存放APK文件
         mkdir -p apk-artifacts/apk-files
         # 搜索所有APK文件
-        apk_files=$(find . -name "*.apk" -type f | grep -v "node_modules")
+        echo "Searching for APK files..."
+        apk_files=$(find . -name "*.apk" -type f 2>/dev/null | grep -v "node_modules" 2>/dev/null)
         if [ -n "$apk_files" ]; then
           echo "Found APK files:"
           echo "$apk_files"
           # 复制所有APK文件到专门的目录
           echo "Copying APK files to apk-artifacts/apk-files/..."
-          find . -name "*.apk" -type f | grep -v "node_modules" | xargs -I {} cp {} apk-artifacts/apk-files/ 2>/dev/null || true
+          find . -name "*.apk" -type f 2>/dev/null | grep -v "node_modules" 2>/dev/null | xargs -I {} cp {} apk-artifacts/apk-files/ 2>/dev/null || true
           echo "Copied APK files:"
-          ls -la apk-artifacts/apk-files/
+          ls -la apk-artifacts/apk-files/ || true
         else
           echo "No APK files found!"
         fi
         # 检查常见的APK生成位置
         echo "=== CHECKING COMMON APK LOCATIONS ==="
-        common_locations=("platforms/android/app/build/outputs/apk" "platforms/android/build/outputs/apk" "build/outputs/apk")
-        for location in "${common_locations[@]}"; do
+        # 使用简单的字符串列表而不是数组，以避免bash数组语法问题
+        locations="platforms/android/app/build/outputs/apk platforms/android/build/outputs/apk build/outputs/apk"
+        for location in $locations; do
           if [ -d "$location" ]; then
             echo "Found directory: $location"
-            ls -la "$location"
-            find "$location" -name "*.apk" -type f | head -10
+            ls -la "$location" || true
+            find "$location" -name "*.apk" -type f 2>/dev/null | head -10 || true
           else
             echo "Directory not found: $location"
           fi
         done
+        set +x  # 禁用详细输出
 
     - name: Upload diagnostic artifacts
       uses: actions/upload-artifact@v4
