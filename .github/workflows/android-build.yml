@@ -140,9 +140,11 @@ jobs:
 
     - name: Build Android APK (Debug) with explicit parameters
       run: |
-        echo "Building debug APK..."
+        echo "=== BUILDING DEBUG APK ==="
         echo "Current directory: $(pwd)"
         ls -la
+        # 确保apk-artifacts目录存在
+        mkdir -p apk-artifacts
         # 设置Gradle分发URL
         export CORDOVA_ANDROID_GRADLE_DISTRIBUTION_URL=https://services.gradle.org/distributions/gradle-8.6-bin.zip
         # 设置更多环境变量
@@ -154,22 +156,25 @@ jobs:
         echo "ANDROID_PLATFORM_VERSION=$ANDROID_PLATFORM_VERSION"
         # 清理之前的构建
         echo "Cleaning previous build..."
-        cordova clean android > clean-output.log 2>&1
+        cordova clean android > apk-artifacts/clean-output.log 2>&1
         echo "Clean output:"
-        cat clean-output.log
+        cat apk-artifacts/clean-output.log
         # 构建Debug版本，添加更多详细信息
         echo "Running: cordova build android --debug --verbose -- --packageType=apk"
-        cordova build android --debug --verbose -- --packageType=apk > build-output.log 2>&1
+        cordova build android --debug --verbose -- --packageType=apk > apk-artifacts/build-output.log 2>&1
+        # 检查构建是否成功
+        build_exit_code=$?
+        echo "Build exit code: $build_exit_code"
         # 显示完整的构建输出
         echo "Full build output:"
-        cat build-output.log
+        cat apk-artifacts/build-output.log
         # 检查构建是否成功
-        if [ $? -ne 0 ]; then
+        if [ $build_exit_code -ne 0 ]; then
           echo "Debug build failed!"
           echo "Searching for error messages in build output..."
-          grep -i "error" build-output.log
+          grep -i "error" apk-artifacts/build-output.log
           echo "Searching for exception messages in build output..."
-          grep -i "exception" build-output.log
+          grep -i "exception" apk-artifacts/build-output.log
           # 检查Gradle构建目录
           if [ -d "platforms/android/app/build" ]; then
             echo "=== GRADLE BUILD DIRECTORY STRUCTURE ==="
@@ -200,15 +205,25 @@ jobs:
             ./gradlew assembleDebug --no-daemon --info > ../gradle-direct-build.log 2>&1
             echo "Full direct Gradle build output:"
             cat ../gradle-direct-build.log
+            # 复制构建日志
+            cp ../gradle-direct-build.log ../../apk-artifacts/
             cd ../..
           fi
         else
           echo "Debug build completed successfully"
         fi
-        # 保存构建日志
-        cp build-output.log apk-artifacts/ 2>/dev/null || true
-        cp clean-output.log apk-artifacts/ 2>/dev/null || true
-        cp platforms/gradle-direct-build.log apk-artifacts/ 2>/dev/null || true
+        # 检查是否生成了APK文件
+        echo "=== CHECKING FOR APK FILES AFTER BUILD ==="
+        find . -name "*.apk" -type f -not -path "*/node_modules/*" 2>/dev/null
+        # 检查常见的APK生成位置
+        common_apk_locations=("platforms/android/app/build/outputs/apk" "platforms/android/build/outputs/apk" "build/outputs/apk")
+        for location in "${common_apk_locations[@]}"; do
+          if [ -d "$location" ]; then
+            echo "=== FOUND APK DIRECTORY: $location ==="
+            ls -la "$location"
+            find "$location" -name "*.apk" -type f 2>/dev/null
+          fi
+        done
 
     - name: Check build output
       run: |
