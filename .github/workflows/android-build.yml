@@ -56,6 +56,10 @@ jobs:
 
     - name: Fix Gradle compatibility issue
       run: |
+        # 确保platforms/android目录存在
+        if [ ! -d "platforms/android" ]; then
+          mkdir -p platforms/android
+        fi
         # 移除可能导致冲突的gradle目录
         if [ -d "platforms/android/gradle" ]; then
           rm -rf platforms/android/gradle
