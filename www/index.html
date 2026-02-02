@@ -600,50 +600,10 @@
 
         // 请求运行时权限
         function requestRuntimePermissions() {
-            if (typeof cordova === 'undefined' || typeof cordova.plugins === 'undefined' || typeof cordova.plugins.permissions === 'undefined') {
-                log('权限插件不可用，将使用默认权限', 'warning');
-                return;
-            }
-            
-            const permissions = cordova.plugins.permissions;
-            const requiredPermissions = [
-                permissions.BLUETOOTH,
-                permissions.BLUETOOTH_ADMIN,
-                permissions.ACCESS_FINE_LOCATION,
-                permissions.ACCESS_COARSE_LOCATION,
-                permissions.INTERNET,
-                permissions.ACCESS_NETWORK_STATE
-            ];
-            
-            log('正在请求运行时权限...', 'info');
-            
-            permissions.requestPermissions(requiredPermissions, function(status) {
-                if (status.hasPermission) {
-                    log('所有权限已授予', 'success');
-                    showNotification('成功', '所有必要的权限已授予', 'success');
-                } else {
-                    log('部分权限被拒绝', 'warning');
-                    showNotification('警告', '部分必要的权限被拒绝，某些功能可能无法正常工作', 'warning');
-                    
-                    // 检查具体哪些权限被拒绝
-                    permissions.checkPermission(requiredPermissions, function(status) {
-                        if (!status.hasPermission) {
-                            if (!status[permissions.BLUETOOTH]) {
-                                log('蓝牙权限被拒绝', 'error');
-                            }
-                            if (!status[permissions.ACCESS_FINE_LOCATION]) {
-                                log('位置权限被拒绝', 'error');
-                            }
-                            if (!status[permissions.INTERNET]) {
-                                log('网络权限被拒绝', 'error');
-                            }
-                        }
-                    });
-                }
-            }, function(error) {
-                log(`请求权限时出错: ${error}`, 'error');
-                showNotification('错误', `请求权限时出错: ${error}`, 'error');
-            });
+            // cordova-plugin-permissions 插件已不再可用
+            // 依赖 AndroidManifest.xml 中配置的权限和系统运行时权限请求
+            log('使用系统默认权限管理，将在需要时请求必要的权限', 'info');
+            showNotification('信息', '应用将在需要时请求必要的权限', 'info');
         }
 
         // 检查gbk.js可用性

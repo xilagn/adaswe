@@ -52,8 +52,7 @@ jobs:
       run: |
         # Install Bluetooth serial plugin for SPP connection
         cordova plugin add cordova-plugin-bluetooth-serial
-        # Install permissions plugin for runtime permission requests
-        cordova plugin add cordova-plugin-permissions
+        # Note: cordova-plugin-permissions is no longer available, using AndroidManifest permissions instead
 
     - name: Fix Gradle compatibility issue
       run: |
