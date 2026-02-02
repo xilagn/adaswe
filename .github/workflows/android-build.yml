@@ -62,17 +62,24 @@ jobs:
         sed -i 's/"COMPILE_SDK_VERSION": null,/"COMPILE_SDK_VERSION": 36,/' platforms/android/cdv-gradle-config.json
         sed -i 's/"TARGET_SDK_VERSION": null,/"TARGET_SDK_VERSION": 36,/' platforms/android/cdv-gradle-config.json
 
+    - name: Build Android APK (Debug)
+      run: |
+        # Build debug APK for testing and installation
+        cordova build android --debug -- --packageType=apk
+
     - name: Build Android APK (Release)
       run: |
-        # Force Cordova to build APK instead of AAB
+        # Build release APK for production
         cordova build android --release -- --packageType=apk
 
-    - name: Locate built APK
+    - name: Locate built APKs
       run: find platforms/android -name "*.apk" -print
 
-    - name: Upload APK artifact
+    - name: Upload APK artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: jdy31-spp-tool-apk
-        path: platforms/android/app/build/outputs/apk/release/*.apk
+        name: jdy31-spp-tool-apks
+        path: |
+          platforms/android/app/build/outputs/apk/debug/*.apk
+          platforms/android/app/build/outputs/apk/release/*.apk
         retention-days: 30
