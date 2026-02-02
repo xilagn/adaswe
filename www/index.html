@@ -1149,8 +1149,12 @@
                         errorMessage = error.message;
                     } else if (error && typeof error === 'string') {
                         errorMessage = error;
-                    } else if (error && error.event) {
+                    } else if (error && error.type === 'error') {
+                        // WebSocket onerror事件参数是Event对象
                         errorMessage = '连接被拒绝或服务器不可用';
+                    } else {
+                        // 其他类型的错误
+                        errorMessage = '连接失败，请检查网络连接或服务器地址';
                     }
                     log(`WebSocket错误: ${errorMessage}`, 'error');
                     updateWsStatus('error', '连接错误');
