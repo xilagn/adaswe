@@ -144,11 +144,12 @@ jobs:
           mkdir -p platforms/android
         fi
         # 创建或修改gradle.properties文件
-        cat > platforms/android/gradle.properties << 'EOF'
-org.gradle.jvmargs=-Xmx2048M -Dorg.gradle.daemon=false
-android.useAndroidX=true
-android.enableJetifier=true
-EOF
+        echo "org.gradle.jvmargs=-Xmx2048M -Dorg.gradle.daemon=false" > platforms/android/gradle.properties
+        echo "android.useAndroidX=true" >> platforms/android/gradle.properties
+        echo "android.enableJetifier=true" >> platforms/android/gradle.properties
+        # 显示创建的文件内容
+        echo "Created gradle.properties file:"
+        cat platforms/android/gradle.properties
         echo "Gradle properties configured"
 
     - name: Build Android APK (Debug) with explicit parameters
