@@ -21,7 +21,8 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "cordova-android": "^14.0.1",
-    "cordova-plugin-bluetooth-serial": "^0.4.7"
+    "cordova-plugin-bluetooth-serial": "^0.4.7",
+    "cordova-plugin-permissions": "^0.0.1-security"
   },
   "cordova": {
     "platforms": [
