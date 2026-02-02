@@ -32,8 +32,6 @@
         <preference name="android-targetSdkVersion" value="36" />
         <preference name="android-compileSdkVersion" value="36" />
         <preference name="android-permissions" value="BLUETOOTH, BLUETOOTH_ADMIN, BLUETOOTH_CONNECT, BLUETOOTH_SCAN, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, INTERNET, ACCESS_NETWORK_STATE" />
-        <config-file parent="application" target="AndroidManifest.xml">
-            <android:networkSecurityConfig="@xml/network_security_config" />
-        </config-file>
+        <preference name="android-networkSecurityConfig" value="@xml/network_security_config" />
     </platform>
 </widget>
