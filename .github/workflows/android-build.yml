@@ -289,40 +289,55 @@ jobs:
 
     - name: Locate and collect all APK files
       run: |
-        set -x  # 启用详细输出
         echo "=== LOCATING ALL APK FILES ==="
         # 确保apk-artifacts目录存在
         mkdir -p apk-artifacts
         # 创建一个专门的目录来存放APK文件
         mkdir -p apk-artifacts/apk-files
-        # 搜索所有APK文件
+        # 搜索所有APK文件，使用更简单的方法
         echo "Searching for APK files..."
-        apk_files=$(find . -name "*.apk" -type f 2>/dev/null | grep -v "node_modules" 2>/dev/null)
-        if [ -n "$apk_files" ]; then
+        # 直接使用find命令，不使用管道和变量赋值
+        find . -name "*.apk" -type f -not -path "*/node_modules/*" 2>/dev/null > apk-artifacts/apk-list.txt
+        # 检查是否找到APK文件
+        if [ -s "apk-artifacts/apk-list.txt" ]; then
           echo "Found APK files:"
-          echo "$apk_files"
+          cat apk-artifacts/apk-list.txt
           # 复制所有APK文件到专门的目录
           echo "Copying APK files to apk-artifacts/apk-files/..."
-          find . -name "*.apk" -type f 2>/dev/null | grep -v "node_modules" 2>/dev/null | xargs -I {} cp {} apk-artifacts/apk-files/ 2>/dev/null || true
+          while IFS= read -r apk_file; do
+            cp "$apk_file" apk-artifacts/apk-files/ 2>/dev/null || true
+          done < apk-artifacts/apk-list.txt
           echo "Copied APK files:"
-          ls -la apk-artifacts/apk-files/ || true
+          ls -la apk-artifacts/apk-files/ 2>/dev/null || echo "No files copied"
         else
           echo "No APK files found!"
         fi
         # 检查常见的APK生成位置
         echo "=== CHECKING COMMON APK LOCATIONS ==="
-        # 使用简单的字符串列表而不是数组，以避免bash数组语法问题
-        locations="platforms/android/app/build/outputs/apk platforms/android/build/outputs/apk build/outputs/apk"
-        for location in $locations; do
-          if [ -d "$location" ]; then
-            echo "Found directory: $location"
-            ls -la "$location" || true
-            find "$location" -name "*.apk" -type f 2>/dev/null | head -10 || true
-          else
-            echo "Directory not found: $location"
-          fi
-        done
-        set +x  # 禁用详细输出
+        # 检查第一个常见位置
+        if [ -d "platforms/android/app/build/outputs/apk" ]; then
+          echo "Found directory: platforms/android/app/build/outputs/apk"
+          ls -la platforms/android/app/build/outputs/apk 2>/dev/null || echo "Cannot list directory"
+          find platforms/android/app/build/outputs/apk -name "*.apk" -type f 2>/dev/null | head -10 || echo "No APK files found in this directory"
+        else
+          echo "Directory not found: platforms/android/app/build/outputs/apk"
+        fi
+        # 检查第二个常见位置
+        if [ -d "platforms/android/build/outputs/apk" ]; then
+          echo "Found directory: platforms/android/build/outputs/apk"
+          ls -la platforms/android/build/outputs/apk 2>/dev/null || echo "Cannot list directory"
+          find platforms/android/build/outputs/apk -name "*.apk" -type f 2>/dev/null | head -10 || echo "No APK files found in this directory"
+        else
+          echo "Directory not found: platforms/android/build/outputs/apk"
+        fi
+        # 检查第三个常见位置
+        if [ -d "build/outputs/apk" ]; then
+          echo "Found directory: build/outputs/apk"
+          ls -la build/outputs/apk 2>/dev/null || echo "Cannot list directory"
+          find build/outputs/apk -name "*.apk" -type f 2>/dev/null | head -10 || echo "No APK files found in this directory"
+        else
+          echo "Directory not found: build/outputs/apk"
+        fi
 
     - name: Upload diagnostic artifacts
       uses: actions/upload-artifact@v4
