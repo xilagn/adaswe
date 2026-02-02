@@ -40,7 +40,6 @@ jobs:
         sdkmanager "platform-tools"
         sdkmanager "tools"
         sdkmanager "cmdline-tools;latest"
-        # 验证安装
         echo "Android SDK packages installed:"
         sdkmanager --list | grep -E "(platforms|build-tools|platform-tools)"
         echo "ANDROID_HOME: $ANDROID_HOME"
@@ -56,7 +55,6 @@ jobs:
         echo "Verifying project structure..."
         echo "Current directory: $(pwd)"
         ls -la
-        # 检查必要的文件是否存在
         if [ -f "package.json" ]; then
           echo "package.json exists"
           cat package.json | head -30
@@ -101,96 +99,72 @@ jobs:
 
     - name: Install required Cordova plugins
       run: |
-        # Install Bluetooth serial plugin for SPP connection
         cordova plugin add cordova-plugin-bluetooth-serial
-        # Note: cordova-plugin-permissions is no longer available, using AndroidManifest permissions instead
 
     - name: Fix Gradle compatibility issue
       run: |
-        # 确保platforms/android目录存在
         if [ ! -d "platforms/android" ]; then
           mkdir -p platforms/android
         fi
-        # 移除可能导致冲突的gradle目录
         if [ -d "platforms/android/gradle" ]; then
           rm -rf platforms/android/gradle
         fi
-        # 确保使用与cordova-android兼容的Gradle版本
         echo "org.gradle.jvmargs=-Xmx1536M" > platforms/android/gradle.properties
 
     - name: Configure SDK version
       run: |
-        # 确保platforms/android目录存在
         if [ ! -d "platforms/android" ]; then
           mkdir -p platforms/android
         fi
-        # 检查cdv-gradle-config.json文件是否存在
         if [ ! -f "platforms/android/cdv-gradle-config.json" ]; then
-          # 创建默认的cdv-gradle-config.json文件
           echo '{"CDV_VERSION": "14.0.1", "COMPILE_SDK_VERSION": 36, "MIN_SDK_VERSION": 22, "TARGET_SDK_VERSION": 36, "ANDROID_BUILD_TOOLS_VERSION": "36.0.0", "ANDROID_GRADLE_PLUGIN_VERSION": "8.6.0", "IS_GRADLE_PLUGIN_KOTLIN_ENABLED": false, "GRADLE_WRAPPER_VERSION": "8.6"}' > platforms/android/cdv-gradle-config.json
           echo "Created default cdv-gradle-config.json file"
         else
-          # 修改现有的配置文件
-          sed -i 's/"COMPILE_SDK_VERSION": null,/"COMPILE_SDK_VERSION": 36,/' platforms/android/cdv-gradle-config.json
-          sed -i 's/"TARGET_SDK_VERSION": null,/"TARGET_SDK_VERSION": 36,/' platforms/android/cdv-gradle-config.json
+          sed -i 's/\"COMPILE_SDK_VERSION\": null,/\"COMPILE_SDK_VERSION\": 36,/' platforms/android/cdv-gradle-config.json
+          sed -i 's/\"TARGET_SDK_VERSION\": null,/\"TARGET_SDK_VERSION\": 36,/' platforms/android/cdv-gradle-config.json
           echo "Updated existing cdv-gradle-config.json file"
         fi
 
     - name: Configure Gradle for APK generation
       run: |
         echo "Configuring Gradle for APK generation..."
-        # 确保platforms/android目录存在
         if [ ! -d "platforms/android" ]; then
           mkdir -p platforms/android
         fi
-        # 创建或修改gradle.properties文件
         echo "org.gradle.jvmargs=-Xmx2048M -Dorg.gradle.daemon=false" > platforms/android/gradle.properties
         echo "android.useAndroidX=true" >> platforms/android/gradle.properties
         echo "android.enableJetifier=true" >> platforms/android/gradle.properties
-        # 显示创建的文件内容
         echo "Created gradle.properties file:"
         cat platforms/android/gradle.properties
         echo "Gradle properties configured"
 
     - name: Build Android APK (Debug) with explicit parameters
       run: |
-        # Build debug APK for testing and installation
         echo "Building debug APK..."
         echo "Current directory: $(pwd)"
         ls -la
-        # 设置Cordova构建参数
         export CORDOVA_ANDROID_GRADLE_DISTRIBUTION_URL=https://services.gradle.org/distributions/gradle-8.6-bin.zip
-        # 清理之前的构建
         echo "Cleaning previous build..."
         cordova clean android > clean-output.log 2>&1 || true
-        # 尝试构建debug版本，使用明确的参数
         echo "Running: cordova build android --debug -- --packageType=apk"
-        # 捕获完整的构建输出
         cordova build android --debug -- --packageType=apk > build-output.log 2>&1
-        # 显示构建输出的最后100行
         echo "Last 100 lines of build output:"
         tail -100 build-output.log
-        # 检查构建是否成功
         if [ $? -ne 0 ]; then
           echo "Debug build failed!"
-          # 检查是否有错误信息
           echo "Searching for error messages in build output..."
           grep -i "error" build-output.log | head -30
-          # 检查Gradle构建目录
           if [ -d "platforms/android/app/build" ]; then
             echo "=== GRADLE BUILD DIRECTORY STRUCTURE ==="
             find platforms/android/app/build -type d | sort
-            # 检查是否有构建报告
             if [ -d "platforms/android/app/build/reports" ]; then
               echo "=== BUILD REPORTS ==="
               find platforms/android/app/build/reports -name "*.html" | head -10
             fi
           fi
-          # 尝试直接使用Gradle构建
-          echo "=== TRYING DIRECT GRADLE BUILD ==="
           if [ -d "platforms/android" ]; then
+            echo "=== TRYING DIRECT GRADLE BUILD ==="
             cd platforms/android
-            echo "Running Gradle build directly..."
             ./gradlew assembleDebug --no-daemon > ../gradle-direct-build.log 2>&1 || true
             cd ../..
             echo "Last 50 lines of direct Gradle build output:"
@@ -199,7 +173,6 @@ jobs:
         else
           echo "Debug build completed successfully"
         fi
-        # 保存构建输出日志
         cp build-output.log apk-artifacts/ 2>/dev/null || true
         cp clean-output.log apk-artifacts/ 2>/dev/null || true
         cp platforms/gradle-direct-build.log apk-artifacts/ 2>/dev/null || true
@@ -208,10 +181,8 @@ jobs:
       run: |
         echo "Checking build output..."
         echo "Current directory: $(pwd)"
-        # 检查所有可能的构建输出目录
         echo "Searching for build output directories..."
         find . -name "build" -type d | grep -v "node_modules" | head -20
-        # 检查Gradle构建输出
         if [ -d "platforms/android/app/build" ]; then
           echo "Gradle build directory exists"
           ls -la platforms/android/app/build/
@@ -220,16 +191,13 @@ jobs:
         else
           echo "Gradle build directory not found"
         fi
-        # 检查其他可能的APK位置
         echo "Searching for APK files in all locations..."
         find . -name "*.apk" -type f | grep -v "node_modules" | head -20
         find . -name "*.aab" -type f | grep -v "node_modules" | head -20
 
     - name: Build Android APK (Release)
       run: |
-        # Build release APK for production
         echo "Building release APK..."
-        # 尝试构建release版本
         echo "Running: cordova build android --release"
         cordova build android --release || {
           echo "Release build failed, but continuing..."
@@ -254,42 +222,34 @@ jobs:
       run: |
         echo "=== FINAL DIAGNOSTIC ==="
         echo "Current directory: $(pwd)"
-        # 创建一个目录来收集所有诊断信息
         mkdir -p apk-artifacts
-        # 1. 收集构建日志
         if [ -f "build-output.log" ]; then
           echo "Copying build output log..."
           cp build-output.log apk-artifacts/
         fi
-        # 2. 收集项目结构信息
         echo "=== PROJECT STRUCTURE ==="
         ls -la > apk-artifacts/project-structure.txt
         if [ -d "platforms" ]; then
           ls -la platforms/ > apk-artifacts/platforms-structure.txt
           if [ -d "platforms/android" ]; then
             ls -la platforms/android/ > apk-artifacts/android-structure.txt
-            # 收集Android平台详细信息
             if [ -d "platforms/android/app" ]; then
               find platforms/android/app -type d | sort > apk-artifacts/android-app-dirs.txt
               find platforms/android/app -type f | grep -E "(gradle|build|xml|json)" | head -30 > apk-artifacts/android-app-files.txt
             fi
           fi
         fi
-        # 3. 搜索所有可能的构建产物
         echo "=== SEARCHING FOR BUILD ARTIFACTS ==="
         find . -name "*.apk" -type f | grep -v "node_modules" | head -20 > apk-artifacts/apk-search.txt
         find . -name "*.aab" -type f | grep -v "node_modules" | head -20 > apk-artifacts/aab-search.txt
         find . -name "*.zip" -type f | grep -v "node_modules" | head -20 > apk-artifacts/zip-search.txt
-        # 4. 复制找到的产物
         echo "=== COPYING FOUND ARTIFACTS ==="
         find . -name "*.apk" -type f | grep -v "node_modules" | xargs -I {} cp {} apk-artifacts/ 2>/dev/null || true
         find . -name "*.aab" -type f | grep -v "node_modules" | xargs -I {} cp {} apk-artifacts/ 2>/dev/null || true
-        # 5. 创建基本测试文件
         echo "=== CREATING TEST FILES ==="
         echo "Test file created at $(date)" > apk-artifacts/test-file.txt
         echo "Project: JDY-31 SPP Tool" >> apk-artifacts/test-file.txt
         echo "Build attempt: $(date)" >> apk-artifacts/test-file.txt
-        # 6. 显示最终收集结果
         echo "=== FINAL ARTIFACTS COLLECTED ==="
         ls -la apk-artifacts/
         echo "=== DIAGNOSTIC COMPLETE ==="
@@ -298,6 +258,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: jdy31-build-diagnostics
-        path: |
-          apk-artifacts/
+        path: apk-artifacts/
         retention-days: 30
