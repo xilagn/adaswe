@@ -141,6 +141,11 @@ jobs:
         echo "Updating Gradle wrapper to version 8.9..."
         if [ -d "platforms/android" ]; then
           cd platforms/android
+          # 确保gradle/wrapper目录存在
+          if [ ! -d "gradle/wrapper" ]; then
+            echo "Creating gradle/wrapper directory..."
+            mkdir -p gradle/wrapper
+          fi
           # 更新gradle-wrapper.properties文件
           echo "distributionBase=GRADLE_USER_HOME" > gradle/wrapper/gradle-wrapper.properties
           echo "distributionPath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
