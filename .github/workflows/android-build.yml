@@ -96,13 +96,23 @@ jobs:
         cordova build android --release -- --packageType=apk
 
     - name: Locate built APKs
-      run: find platforms/android -name "*.apk" -print
+      run: |
+        echo "Searching for APK files..."
+        find . -name "*.apk" -type f | head -20
+        echo "Current directory: $(pwd)"
+        ls -la
+        if [ -d "platforms" ]; then
+          ls -la platforms/
+          if [ -d "platforms/android" ]; then
+            ls -la platforms/android/
+            find platforms/android -type d | head -20
+          fi
+        fi
 
     - name: Upload APK artifacts
       uses: actions/upload-artifact@v4
       with:
         name: jdy31-spp-tool-apks
         path: |
-          platforms/android/app/build/outputs/apk/debug/*.apk
-          platforms/android/app/build/outputs/apk/release/*.apk
+          **/*.apk
         retention-days: 30
