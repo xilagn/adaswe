@@ -212,10 +212,32 @@ jobs:
           fi
         fi
 
+    - name: Find and upload APK artifacts
+      run: |
+        echo "Final search for APK files..."
+        echo "Current directory: $(pwd)"
+        # 创建一个目录来收集所有APK文件
+        mkdir -p apk-artifacts
+        # 搜索所有可能的APK文件位置
+        find . -name "*.apk" -type f | grep -v "node_modules" | head -20
+        # 复制找到的APK文件到收集目录
+        find . -name "*.apk" -type f | grep -v "node_modules" | xargs -I {} cp {} apk-artifacts/ 2>/dev/null || true
+        # 检查收集目录
+        echo "APK files collected:"
+        ls -la apk-artifacts/
+        # 如果没有找到APK文件，尝试查找其他可能的构建产物
+        if [ -z "$(ls -A apk-artifacts/)" ]; then
+          echo "No APK files found, searching for other build artifacts..."
+          find . -name "*.aab" -type f | grep -v "node_modules" | head -10
+          find . -name "*.zip" -type f | grep -v "node_modules" | head -10
+        fi
+
     - name: Upload APK artifacts
       uses: actions/upload-artifact@v4
       with:
         name: jdy31-spp-tool-apks
         path: |
+          apk-artifacts/*
           **/*.apk
+          **/*.aab
         retention-days: 30
