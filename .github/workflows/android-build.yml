@@ -154,6 +154,16 @@ jobs:
         echo "CORDOVA_ANDROID_GRADLE_DISTRIBUTION_URL=$CORDOVA_ANDROID_GRADLE_DISTRIBUTION_URL"
         echo "ANDROID_BUILD_TOOLS_VERSION=$ANDROID_BUILD_TOOLS_VERSION"
         echo "ANDROID_PLATFORM_VERSION=$ANDROID_PLATFORM_VERSION"
+        # 检查Node.js和npm版本
+        echo "=== CHECKING NODE.JS AND NPM VERSIONS ==="
+        node --version
+        npm --version
+        # 检查Cordova版本
+        echo "=== CHECKING CORDOVA VERSION ==="
+        cordova --version
+        # 检查Android SDK版本
+        echo "=== CHECKING ANDROID SDK VERSIONS ==="
+        sdkmanager --list | grep -E "(platforms;android-36|build-tools;36.0.0)"
         # 清理之前的构建
         echo "Cleaning previous build..."
         cordova clean android > apk-artifacts/clean-output.log 2>&1
@@ -175,6 +185,8 @@ jobs:
           grep -i "error" apk-artifacts/build-output.log
           echo "Searching for exception messages in build output..."
           grep -i "exception" apk-artifacts/build-output.log
+          echo "Searching for fail messages in build output..."
+          grep -i "fail" apk-artifacts/build-output.log
           # 检查Gradle构建目录
           if [ -d "platforms/android/app/build" ]; then
             echo "=== GRADLE BUILD DIRECTORY STRUCTURE ==="
@@ -214,16 +226,59 @@ jobs:
         fi
         # 检查是否生成了APK文件
         echo "=== CHECKING FOR APK FILES AFTER BUILD ==="
-        find . -name "*.apk" -type f -not -path "*/node_modules/*" 2>/dev/null
+        # 搜索所有APK文件
+        echo "Searching for APK files in entire project..."
+        find . -name "*.apk" -type f -not -path "*/node_modules/*" 2>/dev/null > apk-artifacts/all-apk-files.txt
+        if [ -s "apk-artifacts/all-apk-files.txt" ]; then
+          echo "Found APK files:"
+          cat apk-artifacts/all-apk-files.txt
+        else
+          echo "No APK files found in entire project!"
+        fi
         # 检查常见的APK生成位置
-        common_apk_locations=("platforms/android/app/build/outputs/apk" "platforms/android/build/outputs/apk" "build/outputs/apk")
-        for location in "${common_apk_locations[@]}"; do
-          if [ -d "$location" ]; then
-            echo "=== FOUND APK DIRECTORY: $location ==="
-            ls -la "$location"
-            find "$location" -name "*.apk" -type f 2>/dev/null
+        echo "=== CHECKING COMMON APK LOCATIONS ==="
+        # 检查第一个常见位置
+        if [ -d "platforms/android/app/build/outputs/apk" ]; then
+          echo "=== FOUND APK DIRECTORY: platforms/android/app/build/outputs/apk ==="
+          ls -la platforms/android/app/build/outputs/apk
+          find platforms/android/app/build/outputs/apk -name "*.apk" -type f 2>/dev/null
+        else
+          echo "Directory not found: platforms/android/app/build/outputs/apk"
+          # 检查父目录是否存在
+          if [ -d "platforms/android/app/build" ]; then
+            echo "Parent directory exists: platforms/android/app/build"
+            ls -la platforms/android/app/build
+            find platforms/android/app/build -type d | sort
           fi
-        done
+        fi
+        # 检查第二个常见位置
+        if [ -d "platforms/android/build/outputs/apk" ]; then
+          echo "=== FOUND APK DIRECTORY: platforms/android/build/outputs/apk ==="
+          ls -la platforms/android/build/outputs/apk
+          find platforms/android/build/outputs/apk -name "*.apk" -type f 2>/dev/null
+        else
+          echo "Directory not found: platforms/android/build/outputs/apk"
+        fi
+        # 检查第三个常见位置
+        if [ -d "build/outputs/apk" ]; then
+          echo "=== FOUND APK DIRECTORY: build/outputs/apk ==="
+          ls -la build/outputs/apk
+          find build/outputs/apk -name "*.apk" -type f 2>/dev/null
+        else
+          echo "Directory not found: build/outputs/apk"
+        fi
+        # 检查platforms目录结构
+        echo "=== CHECKING PLATFORMS DIRECTORY STRUCTURE ==="
+        if [ -d "platforms" ]; then
+          echo "Platforms directory exists"
+          ls -la platforms/
+          if [ -d "platforms/android" ]; then
+            echo "Android platform directory exists"
+            ls -la platforms/android/
+            # 检查android目录下的所有子目录
+            find platforms/android -type d | sort | head -30
+          fi
+        fi
 
     - name: Check build output
       run: |
