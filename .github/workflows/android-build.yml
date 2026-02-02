@@ -150,10 +150,14 @@ jobs:
         # 设置更多环境变量
         export ANDROID_BUILD_TOOLS_VERSION=36.0.0
         export ANDROID_PLATFORM_VERSION=36
+        export ANDROID_HOME=/usr/local/lib/android/sdk
+        export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin
         echo "环境变量设置:"
         echo "CORDOVA_ANDROID_GRADLE_DISTRIBUTION_URL=$CORDOVA_ANDROID_GRADLE_DISTRIBUTION_URL"
         echo "ANDROID_BUILD_TOOLS_VERSION=$ANDROID_BUILD_TOOLS_VERSION"
         echo "ANDROID_PLATFORM_VERSION=$ANDROID_PLATFORM_VERSION"
+        echo "ANDROID_HOME=$ANDROID_HOME"
+        echo "PATH=$PATH"
         # 检查Node.js和npm版本
         echo "=== CHECKING NODE.JS AND NPM VERSIONS ==="
         node --version
@@ -163,85 +167,35 @@ jobs:
         cordova --version
         # 检查Android SDK版本
         echo "=== CHECKING ANDROID SDK VERSIONS ==="
-        sdkmanager --list | grep -E "(platforms;android-36|build-tools;36.0.0)"
+        sdkmanager --list | grep -E "(platforms;android-36|build-tools;36.0.0|platform-tools|cmdline-tools)"
+        # 检查Java版本
+        echo "=== CHECKING JAVA VERSION ==="
+        java -version
+        javac -version
+        # 检查项目结构
+        echo "=== CHECKING PROJECT STRUCTURE ==="
+        ls -la
+        ls -la www/
+        cat config.xml
+        cat package.json
         # 清理之前的构建
         echo "Cleaning previous build..."
-        cordova clean android > apk-artifacts/clean-output.log 2>&1
-        echo "Clean output:"
-        cat apk-artifacts/clean-output.log
+        cordova clean android
         # 构建Debug版本，添加更多详细信息
         echo "Running: cordova build android --debug --verbose -- --packageType=apk"
-        cordova build android --debug --verbose -- --packageType=apk > apk-artifacts/build-output.log 2>&1
-        # 检查构建是否成功
-        build_exit_code=$?
-        echo "Build exit code: $build_exit_code"
-        # 显示完整的构建输出
-        echo "Full build output:"
-        cat apk-artifacts/build-output.log
-        # 检查构建是否成功
-        if [ $build_exit_code -ne 0 ]; then
-          echo "Debug build failed!"
-          echo "Searching for error messages in build output..."
-          grep -i "error" apk-artifacts/build-output.log
-          echo "Searching for exception messages in build output..."
-          grep -i "exception" apk-artifacts/build-output.log
-          echo "Searching for fail messages in build output..."
-          grep -i "fail" apk-artifacts/build-output.log
-          # 检查Gradle构建目录
-          if [ -d "platforms/android/app/build" ]; then
-            echo "=== GRADLE BUILD DIRECTORY STRUCTURE ==="
-            find platforms/android/app/build -type d | sort
-            # 检查是否有构建报告
-            if [ -d "platforms/android/app/build/reports" ]; then
-              echo "=== BUILD REPORTS ==="
-              find platforms/android/app/build/reports -name "*.html" | head -10
-              # 检查是否有构建失败的报告
-              if [ -f "platforms/android/app/build/reports/tests/testDebugUnitTest/index.html" ]; then
-                echo "=== TEST REPORT SUMMARY ==="
-                grep -A 10 -B 5 "FAILED" platforms/android/app/build/reports/tests/testDebugUnitTest/index.html || true
-              fi
-            fi
-          fi
-          # 尝试直接使用Gradle构建
-          echo "=== TRYING DIRECT GRADLE BUILD ==="
-          if [ -d "platforms/android" ]; then
-            cd platforms/android
-            echo "Running Gradle build directly with verbose output..."
-            # 确保gradlew脚本存在且可执行
-            if [ ! -f "gradlew" ]; then
-              echo "Creating gradlew script..."
-              curl -O https://raw.githubusercontent.com/gradle/gradle/master/gradlew
-              chmod +x gradlew
-            fi
-            # 直接运行Gradle构建，添加更多详细信息
-            ./gradlew assembleDebug --no-daemon --info > ../gradle-direct-build.log 2>&1
-            echo "Full direct Gradle build output:"
-            cat ../gradle-direct-build.log
-            # 复制构建日志
-            cp ../gradle-direct-build.log ../../apk-artifacts/
-            cd ../..
-          fi
-        else
-          echo "Debug build completed successfully"
-        fi
+        cordova build android --debug --verbose -- --packageType=apk
         # 检查是否生成了APK文件
         echo "=== CHECKING FOR APK FILES AFTER BUILD ==="
         # 搜索所有APK文件
         echo "Searching for APK files in entire project..."
-        find . -name "*.apk" -type f -not -path "*/node_modules/*" 2>/dev/null > apk-artifacts/all-apk-files.txt
-        if [ -s "apk-artifacts/all-apk-files.txt" ]; then
-          echo "Found APK files:"
-          cat apk-artifacts/all-apk-files.txt
-        else
-          echo "No APK files found in entire project!"
-        fi
+        find . -name "*.apk" -type f -not -path "*/node_modules/*"
         # 检查常见的APK生成位置
         echo "=== CHECKING COMMON APK LOCATIONS ==="
         # 检查第一个常见位置
         if [ -d "platforms/android/app/build/outputs/apk" ]; then
           echo "=== FOUND APK DIRECTORY: platforms/android/app/build/outputs/apk ==="
           ls -la platforms/android/app/build/outputs/apk
-          find platforms/android/app/build/outputs/apk -name "*.apk" -type f 2>/dev/null
+          find platforms/android/app/build/outputs/apk -name "*.apk" -type f
         else
           echo "Directory not found: platforms/android/app/build/outputs/apk"
           # 检查父目录是否存在
@@ -249,35 +203,41 @@ jobs:
             echo "Parent directory exists: platforms/android/app/build"
             ls -la platforms/android/app/build
             find platforms/android/app/build -type d | sort
+          else
+            echo "Parent directory not found: platforms/android/app/build"
+            # 检查更上层的目录
+            if [ -d "platforms/android/app" ]; then
+              echo "Directory exists: platforms/android/app"
+              ls -la platforms/android/app
+            else
+              echo "Directory not found: platforms/android/app"
+            fi
           fi
         fi
-        # 检查第二个常见位置
-        if [ -d "platforms/android/build/outputs/apk" ]; then
-          echo "=== FOUND APK DIRECTORY: platforms/android/build/outputs/apk ==="
-          ls -la platforms/android/build/outputs/apk
-          find platforms/android/build/outputs/apk -name "*.apk" -type f 2>/dev/null
-        else
-          echo "Directory not found: platforms/android/build/outputs/apk"
-        fi
-        # 检查第三个常见位置
-        if [ -d "build/outputs/apk" ]; then
-          echo "=== FOUND APK DIRECTORY: build/outputs/apk ==="
-          ls -la build/outputs/apk
-          find build/outputs/apk -name "*.apk" -type f 2>/dev/null
-        else
-          echo "Directory not found: build/outputs/apk"
-        fi
-        # 检查platforms目录结构
-        echo "=== CHECKING PLATFORMS DIRECTORY STRUCTURE ==="
-        if [ -d "platforms" ]; then
-          echo "Platforms directory exists"
-          ls -la platforms/
-          if [ -d "platforms/android" ]; then
-            echo "Android platform directory exists"
-            ls -la platforms/android/
-            # 检查android目录下的所有子目录
-            find platforms/android -type d | sort | head -30
+        # 尝试直接使用Gradle构建
+        echo "=== TRYING DIRECT GRADLE BUILD ==="
+        if [ -d "platforms/android" ]; then
+          cd platforms/android
+          echo "Running Gradle build directly..."
+          # 确保gradlew脚本存在且可执行
+          if [ ! -f "gradlew" ]; then
+            echo "Creating gradlew script..."
+            curl -O https://raw.githubusercontent.com/gradle/gradle/master/gradlew
+            chmod +x gradlew
           fi
+          # 直接运行Gradle构建
+          ./gradlew assembleDebug --no-daemon
+          # 检查是否生成了APK文件
+          echo "=== CHECKING FOR APK FILES AFTER DIRECT GRADLE BUILD ==="
+          find . -name "*.apk" -type f
+          cd ../..
+        fi
+        # 检查最终的项目结构
+        echo "=== FINAL PROJECT STRUCTURE ==="
+        ls -la
+        ls -la platforms/
+        if [ -d "platforms/android" ]; then
+          ls -la platforms/android/
         fi
 
     - name: Check build output
