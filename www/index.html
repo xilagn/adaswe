@@ -1175,6 +1175,11 @@
                     log('WebSocket错误: ' + errorMessage, 'error');
                     updateWsStatus('error', '连接错误');
                     showNotification('错误', 'WebSocket连接失败: ' + errorMessage, 'error');
+                    
+                    // 自动重连
+                    if (settings.autoReconnectWebsocket) {
+                        scheduleWsReconnect();
+                    }
                 };
                 
             } catch (error) {
@@ -1190,6 +1195,11 @@
                 log('WebSocket连接失败: ' + errorMessage, 'error');
                 updateWsStatus('disconnected', '连接失败');
                 showNotification('错误', 'WebSocket连接失败: ' + errorMessage, 'error');
+                
+                // 自动重连
+                if (settings.autoReconnectWebsocket) {
+                    scheduleWsReconnect();
+                }
             }
         }
 
