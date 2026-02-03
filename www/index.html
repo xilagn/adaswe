@@ -415,8 +415,17 @@
         </div>
     </div>
 
-    <script src="cordova.js"></script>
     <script>
+        // 全局错误处理
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error('全局错误:', message);
+            console.error('错误来源:', source);
+            console.error('错误行号:', lineno);
+            console.error('错误列号:', colno);
+            console.error('错误对象:', error);
+            return true;
+        };
+
         // 全局变量
         var bluetoothConnected = false;
         var bluetoothDevice = null;
@@ -515,7 +524,9 @@
             requestRuntimePermissions();
             checkBluetoothAvailability();
         });
-
+    </script>
+    <script src="cordova.js"></script>
+    <script>
         // 设置事件监听器
         function setupEventListeners() {
             // 蓝牙连接按钮
@@ -1449,3 +1460,4 @@
             var notification = elements.notification;
             notification.classList.add('translate-x-full');
         }
+    </script>
