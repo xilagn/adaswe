@@ -116,40 +116,39 @@ jobs:
         if [ ! -f "platforms/android/app/src/main/AndroidManifest.xml" ]; then
           echo "AndroidManifest.xml file not found, creating..."
           # 创建基本的AndroidManifest.xml文件
-          cat > platforms/android/app/src/main/AndroidManifest.xml << 'EOF'
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:overrideLibrary="androidx.appcompat.resources, androidx.appcompat, androidx.core, androidx.webkit">
-    <supports-screens android:anyDensity="true" android:largeScreens="true" android:normalScreens="true" android:resizeable="true" android:smallScreens="true" android:xlargeScreens="true" />
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <application android:hardwareAccelerated="true" android:icon="@mipmap/ic_launcher" android:label="@string/app_name" android:networkSecurityConfig="@xml/network_security_config" android:supportsRtl="true">
-        <activity android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation" android:exported="true" android:label="@string/activity_name" android:launchMode="singleTop" android:name="MainActivity" android:theme="@style/Theme.App.SplashScreen" android:windowSoftInputMode="adjustResize">
-            <intent-filter android:label="@string/launcher_name">
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <provider android:authorities="${applicationId}.cdv.core.file.provider" android:exported="false" android:grantUriPermissions="true" android:name="androidx.core.content.FileProvider">
-            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/cdv_core_file_provider_paths" />
-        </provider>
-    </application>
-    <queries>
-        <intent>
-            <action android:name="android.media.action.IMAGE_CAPTURE" />
-        </intent>
-    </queries>
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-feature android:name="android.hardware.bluetooth" android:required="true" />
-    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
-</manifest>
-EOF
+          # 使用echo命令创建文件，避免here-document语法
+          echo '<?xml version="1.0" encoding="utf-8"?>' > platforms/android/app/src/main/AndroidManifest.xml
+          echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:overrideLibrary="androidx.appcompat.resources, androidx.appcompat, androidx.core, androidx.webkit">' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '    <supports-screens android:anyDensity="true" android:largeScreens="true" android:normalScreens="true" android:resizeable="true" android:smallScreens="true" android:xlargeScreens="true" />' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '    <uses-permission android:name="android.permission.INTERNET" />' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '    <uses-permission android:name="android.permission.READ_PHONE_STATE" />' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '    <application android:hardwareAccelerated="true" android:icon="@mipmap/ic_launcher" android:label="@string/app_name" android:networkSecurityConfig="@xml/network_security_config" android:supportsRtl="true">' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '        <activity android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation" android:exported="true" android:label="@string/activity_name" android:launchMode="singleTop" android:name="MainActivity" android:theme="@style/Theme.App.SplashScreen" android:windowSoftInputMode="adjustResize">' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '            <intent-filter android:label="@string/launcher_name">' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '                <action android:name="android.intent.action.MAIN" />' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '                <category android:name="android.intent.category.LAUNCHER" />' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '            </intent-filter>' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '        </activity>' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '        <provider android:authorities="${applicationId}.cdv.core.file.provider" android:exported="false" android:grantUriPermissions="true" android:name="androidx.core.content.FileProvider">' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/cdv_core_file_provider_paths" />' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '        </provider>' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '    </application>' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '    <queries>' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '        <intent>' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '            <action android:name="android.media.action.IMAGE_CAPTURE" />' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '        </intent>' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '    </queries>' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '    <uses-permission android:name="android.permission.BLUETOOTH" />' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '    <uses-feature android:name="android.hardware.bluetooth" android:required="true" />' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />' >> platforms/android/app/src/main/AndroidManifest.xml
+          echo '</manifest>' >> platforms/android/app/src/main/AndroidManifest.xml
           echo "Created AndroidManifest.xml file"
         else
           echo "Found AndroidManifest.xml file, updating..."
