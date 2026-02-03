@@ -2,7 +2,9 @@
 
 /**
  * Cordova hook script to fix duplicate application tags in AndroidManifest.xml
+ * and add tools:overrideLibrary configuration for AndroidX libraries
  * This ensures that the Android manifest is valid and the app can load local web pages
+ * and run on Android 16 despite using AndroidX libraries that require higher SDK versions
  */
 
 const fs = require('fs');
@@ -26,6 +28,26 @@ module.exports = function(context) {
                 
                 // Read the file content
                 let manifestContent = fs.readFileSync(manifestPath, 'utf8');
+                
+                // Add tools namespace and overrideLibrary configuration to the manifest tag
+                console.log('Adding tools:overrideLibrary configuration for AndroidX libraries');
+                const manifestTagRegex = /<manifest([^>]*)>/;
+                if (manifestTagRegex.test(manifestContent)) {
+                    // Check if tools namespace is already present
+                    if (!manifestContent.includes('xmlns:tools="http://schemas.android.com/tools"')) {
+                        // Add tools namespace
+                        manifestContent = manifestContent.replace(manifestTagRegex, '<manifest$1 xmlns:tools="http://schemas.android.com/tools">');
+                    }
+                    
+                    // Check if overrideLibrary is already present
+                    if (!manifestContent.includes('tools:overrideLibrary')) {
+                        // Add overrideLibrary attribute
+                        manifestContent = manifestContent.replace(
+                            /<manifest([^>]*)>/,
+                            '<manifest$1 tools:overrideLibrary="androidx.appcompat.resources, androidx.appcompat, androidx.core, androidx.webkit">'
+                        );
+                    }
+                }
                 
                 // Check for duplicate application tags
                 const applicationTagRegex = /<application[^>]*>((?:[\s\S](?!<\/application>))*)<\/application>/g;
@@ -63,7 +85,9 @@ module.exports = function(context) {
                     fs.writeFileSync(manifestPath, fixedContent);
                     console.log('Fixed duplicate application tags in AndroidManifest.xml');
                 } else {
-                    console.log('No duplicate application tags found, AndroidManifest.xml is valid');
+                    // No duplicate application tags, just write back the content with tools:overrideLibrary
+                    fs.writeFileSync(manifestPath, manifestContent);
+                    console.log('Added tools:overrideLibrary configuration to AndroidManifest.xml');
                 }
             } else {
                 console.log('AndroidManifest.xml not found:', manifestPath);
