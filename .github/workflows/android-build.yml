@@ -126,6 +126,30 @@ jobs:
           echo "Updated existing cdv-gradle-config.json file"
         fi
 
+    - name: Update AndroidX versions for minSdk 16 compatibility
+      run: |
+        echo "=== UPDATING ANDROIDX VERSIONS FOR MIN SDK 16 COMPATIBILITY ==="
+        if [ -f "platforms/android/cdv-gradle-config.json" ]; then
+          # Add AndroidX version properties with compatible versions for minSdk 16
+          if grep -q "ANDROIDX_APP_COMPAT_VERSION" platforms/android/cdv-gradle-config.json; then
+            sed -i 's/\"ANDROIDX_APP_COMPAT_VERSION\": \"[0-9.]*\",/\"ANDROIDX_APP_COMPAT_VERSION\": \"1.2.0\",/' platforms/android/cdv-gradle-config.json
+          else
+            # Add AndroidX properties if they don't exist
+            sed -i 's/"GRADLE_WRAPPER_VERSION": "[0-9.]*"/"GRADLE_WRAPPER_VERSION": "8.6", "ANDROIDX_APP_COMPAT_VERSION": "1.2.0", "ANDROIDX_WEBKIT_VERSION": "1.2.0", "ANDROIDX_CORE_SPLASHSCREEN_VERSION": "1.0.0"/' platforms/android/cdv-gradle-config.json
+          fi
+          # Also update webkit and splashscreen versions to be compatible
+          if grep -q "ANDROIDX_WEBKIT_VERSION" platforms/android/cdv-gradle-config.json; then
+            sed -i 's/\"ANDROIDX_WEBKIT_VERSION\": \"[0-9.]*\",/\"ANDROIDX_WEBKIT_VERSION\": \"1.2.0\",/' platforms/android/cdv-gradle-config.json
+          fi
+          if grep -q "ANDROIDX_CORE_SPLASHSCREEN_VERSION" platforms/android/cdv-gradle-config.json; then
+            sed -i 's/\"ANDROIDX_CORE_SPLASHSCREEN_VERSION\": \"[0-9.]*\",/\"ANDROIDX_CORE_SPLASHSCREEN_VERSION\": \"1.0.0\",/' platforms/android/cdv-gradle-config.json
+          fi
+          echo "Updated AndroidX versions in cdv-gradle-config.json"
+          cat platforms/android/cdv-gradle-config.json
+        else
+          echo "cdv-gradle-config.json not found, skipping AndroidX version update"
+        fi
+
     - name: Configure Gradle for APK generation
       run: |
         echo "Configuring Gradle for APK generation..."
