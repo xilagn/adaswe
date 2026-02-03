@@ -180,6 +180,44 @@ jobs:
           cd ../..
         fi
 
+    - name: Add tools:overrideLibrary to AndroidManifest.xml
+      run: |
+        echo "=== ADDING TOOLS:OVERRIDELIBRARY TO ANDROIDMANIFEST.XML ==="
+        if [ -d "platforms/android" ]; then
+          cd platforms/android
+          # 确保AndroidManifest.xml文件存在
+          if [ -f "app/src/main/AndroidManifest.xml" ]; then
+            echo "Found AndroidManifest.xml file"
+            # 读取文件内容
+            manifest_content=$(cat app/src/main/AndroidManifest.xml)
+            
+            # 添加tools命名空间和overrideLibrary配置
+            echo "Adding tools namespace and overrideLibrary configuration"
+            
+            # 检查是否已包含tools命名空间
+            if [[ ! "$manifest_content" =~ xmlns:tools="http://schemas.android.com/tools" ]]; then
+              # 添加tools命名空间
+              manifest_content=$(echo "$manifest_content" | sed 's/<manifest/<manifest xmlns:tools="http:\/\/schemas.android.com\/tools"/')
+            fi
+            
+            # 检查是否已包含overrideLibrary
+            if [[ ! "$manifest_content" =~ tools:overrideLibrary ]]; then
+              # 添加overrideLibrary属性
+              manifest_content=$(echo "$manifest_content" | sed 's/<manifest\([^>]*\)>/<manifest\1 tools:overrideLibrary="androidx.appcompat.resources, androidx.appcompat, androidx.core, androidx.webkit">/')
+            fi
+            
+            # 写回文件
+            echo "$manifest_content" > app/src/main/AndroidManifest.xml
+            echo "Updated AndroidManifest.xml file with tools:overrideLibrary"
+            cat app/src/main/AndroidManifest.xml
+          else
+            echo "AndroidManifest.xml file not found"
+          fi
+          cd ../..
+        else
+          echo "platforms/android directory not found"
+        fi
+
     - name: Build Android APK (Debug) with explicit parameters
       run: |
         echo "=== BUILDING DEBUG APK ==="
