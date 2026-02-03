@@ -150,6 +150,31 @@ jobs:
           echo "cdv-gradle-config.json not found, skipping AndroidX version update"
         fi
 
+    - name: Add tools:overrideLibrary to AndroidManifest.xml for minSdk 16 compatibility
+      run: |
+        echo "=== ADDING TOOLS:OVERRIDELIBRARY TO ANDROIDMANIFEST.XML ==="
+        if [ -f "platforms/android/app/src/main/AndroidManifest.xml" ]; then
+          # Check if manifest already has tools namespace
+          if grep -q "xmlns:tools" platforms/android/app/src/main/AndroidManifest.xml; then
+            # Manifest already has tools namespace, just add overrideLibrary
+            if grep -q "tools:overrideLibrary" platforms/android/app/src/main/AndroidManifest.xml; then
+              # Already has overrideLibrary, update it
+              sed -i 's/tools:overrideLibrary="[^"]*"/tools:overrideLibrary="androidx.appcompat.resources"/' platforms/android/app/src/main/AndroidManifest.xml
+            else
+              # Add overrideLibrary to application tag
+              sed -i 's/<application /<application tools:overrideLibrary="androidx.appcompat.resources" /' platforms/android/app/src/main/AndroidManifest.xml
+            fi
+          else
+            # Add tools namespace and overrideLibrary
+            sed -i 's/<manifest /<manifest xmlns:tools="http:\/\/schemas.android.com\/tools" /' platforms/android/app/src/main/AndroidManifest.xml
+            sed -i 's/<application /<application tools:overrideLibrary="androidx.appcompat.resources" /' platforms/android/app/src/main/AndroidManifest.xml
+          fi
+          echo "Updated AndroidManifest.xml with tools:overrideLibrary"
+          cat platforms/android/app/src/main/AndroidManifest.xml
+        else
+          echo "AndroidManifest.xml not found, skipping"
+        fi
+
     - name: Configure Gradle for APK generation
       run: |
         echo "Configuring Gradle for APK generation..."
