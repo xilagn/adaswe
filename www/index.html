@@ -1153,8 +1153,9 @@
                         if (message.type === 'command') {
                             // 处理标准命令消息
                             var command = message.data;
-                            var encoding = 'utf8'; // 强制使用utf8编码处理服务器数据
-                            log('执行服务器命令: ' + command + ' (编码: ' + encoding + ')', 'command');
+                            var serverEncoding = 'utf8'; // 服务器数据接收使用utf8编码
+                            var bluetoothEncoding = 'gbk'; // 蓝牙串口发送使用gbk编码
+                            log('执行服务器命令: ' + command + ' (服务器编码: ' + serverEncoding + ', 蓝牙编码: ' + bluetoothEncoding + ')', 'command');
                             
                             if (bluetoothConnected) {
                                 // 直接发送命令到蓝牙设备
@@ -1163,7 +1164,7 @@
                                     textToSend += '\r\n';
                                 }
                                 
-                                var encodedData = encodeWithEncoding(textToSend, encoding);
+                                var encodedData = encodeWithEncoding(textToSend, bluetoothEncoding);
                                 if (typeof bluetoothSerial !== 'undefined') {
                                     bluetoothSerial.write(encodedData.buffer, function() {
                                         log('命令转发成功: ' + command, 'success');
@@ -1184,7 +1185,9 @@
                         } else if (message.command) {
                             // 处理易语言程序格式的消息
                             var command = message.command;
-                            log('执行服务器命令: ' + command, 'command');
+                            var serverEncoding = 'utf8'; // 服务器数据接收使用utf8编码
+                            var bluetoothEncoding = 'gbk'; // 蓝牙串口发送使用gbk编码
+                            log('执行服务器命令: ' + command + ' (服务器编码: ' + serverEncoding + ', 蓝牙编码: ' + bluetoothEncoding + ')', 'command');
                             
                             if (bluetoothConnected) {
                                 var textToSend = command;
@@ -1192,7 +1195,7 @@
                                     textToSend += '\r\n';
                                 }
                                 
-                                var encodedData = encodeWithEncoding(textToSend, 'utf8');
+                                var encodedData = encodeWithEncoding(textToSend, bluetoothEncoding);
                                 if (typeof bluetoothSerial !== 'undefined') {
                                     bluetoothSerial.write(encodedData.buffer, function() {
                                         log('命令转发成功: ' + command, 'success');
@@ -1214,7 +1217,9 @@
                         // 如果不是JSON，直接作为命令处理
                         if (typeof event.data === 'string') {
                             var command = event.data;
-                            log('收到命令: ' + command, 'command');
+                            var serverEncoding = 'utf8'; // 服务器数据接收使用utf8编码
+                            var bluetoothEncoding = 'gbk'; // 蓝牙串口发送使用gbk编码
+                            log('收到命令: ' + command + ' (服务器编码: ' + serverEncoding + ', 蓝牙编码: ' + bluetoothEncoding + ')', 'command');
                             
                             if (bluetoothConnected) {
                                 var textToSend = command;
@@ -1222,7 +1227,7 @@
                                     textToSend += '\r\n';
                                 }
                                 
-                                var encodedData = encodeWithEncoding(textToSend, 'utf8');
+                                var encodedData = encodeWithEncoding(textToSend, bluetoothEncoding);
                                 if (typeof bluetoothSerial !== 'undefined') {
                                     bluetoothSerial.write(encodedData.buffer, function() {
                                         log('命令转发成功: ' + command, 'success');
