@@ -25,13 +25,15 @@
             <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
             <uses-permission android:name="android.permission.INTERNET" />
             <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+            <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+            <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
             <uses-feature android:name="android.hardware.bluetooth" android:required="true" />
             <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
         </config-file>
         <preference name="android-minSdkVersion" value="22" />
         <preference name="android-targetSdkVersion" value="36" />
         <preference name="android-compileSdkVersion" value="36" />
-        <preference name="android-permissions" value="BLUETOOTH, BLUETOOTH_ADMIN, BLUETOOTH_CONNECT, BLUETOOTH_SCAN, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, INTERNET, ACCESS_NETWORK_STATE" />
+        <preference name="android-permissions" value="BLUETOOTH, BLUETOOTH_ADMIN, BLUETOOTH_CONNECT, BLUETOOTH_SCAN, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, INTERNET, ACCESS_NETWORK_STATE, READ_PHONE_STATE, ACCESS_WIFI_STATE" />
         <preference name="android-networkSecurityConfig" value="@xml/network_security_config" />
     </platform>
 </widget>
