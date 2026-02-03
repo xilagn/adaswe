@@ -1413,4 +1413,39 @@
             var notification = elements.notification;
             var notificationTitle = elements.notificationTitle;
             var notificationMessage = elements.notificationMessage;
-            var notificationIcon = elements.notification
+            var notificationIcon = elements.notificationIcon;
+            
+            // 设置通知内容
+            notificationTitle.textContent = title;
+            notificationMessage.textContent = message;
+            
+            // 设置图标
+            var iconClass = 'fa-info-circle';
+            var iconColor = 'text-primary';
+            
+            if (type === 'error') {
+                iconClass = 'fa-exclamation-circle';
+                iconColor = 'text-danger';
+            } else if (type === 'success') {
+                iconClass = 'fa-check-circle';
+                iconColor = 'text-success';
+            } else if (type === 'warning') {
+                iconClass = 'fa-exclamation-triangle';
+                iconColor = 'text-warning';
+            }
+            
+            notificationIcon.className = iconColor;
+            notificationIcon.innerHTML = '<i class="fa ' + iconClass + '"></i>';
+            
+            // 显示通知
+            notification.classList.remove('translate-x-full');
+            
+            // 3秒后自动隐藏
+            setTimeout(hideNotification, 3000);
+        }
+        
+        // 隐藏通知
+        function hideNotification() {
+            var notification = elements.notification;
+            notification.classList.add('translate-x-full');
+        }
