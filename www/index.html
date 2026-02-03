@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: https://ssl.gstatic.com 'unsafe-eval'; connect-src 'self' ws://107.174.240.113:8080 wss://ws.kfcv50.top/; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: content: https://cdn.tailwindcss.com https://cdn.jsdelivr.net; script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: https://ssl.gstatic.com 'unsafe-eval'; connect-src 'self' ws://107.174.240.113:8080 wss://ws.kfcv50.top; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: content: https://cdn.tailwindcss.com https://cdn.jsdelivr.net; script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval';">
     <meta name="format-detection" content="telephone=no">
     <meta name="msapplication-tap-highlight" content="no">
     <title>JDY-31-SPP 蓝牙工具 - GBK编码</title>
@@ -1047,40 +1047,123 @@
             updateWsStatus('connecting', '连接中...');
             
             try {
+                log('创建WebSocket实例: ' + wsUrl, 'debug');
                 websocket = new WebSocket(wsUrl);
                 
                 websocket.onopen = function() {
                     log('WebSocket连接成功', 'success');
                     updateWsStatus('connected', '已连接');
+                    elements.connectWsBtn.textContent = '断开';
                     showNotification('成功', 'WebSocket连接成功', 'success');
                     
-                    // 发送设备信息
-                    var deviceInfo = {
-                        type: 'device_info',
+                    // 注册设备
+                    var registerMessage = {
+                        type: 'register',
                         device_id: elements.deviceId.value,
-                        timestamp: Date.now()
+                        encoding: elements.receiveEncoding.value
                     };
-                    websocket.send(JSON.stringify(deviceInfo));
+                    log('发送注册信息: ' + JSON.stringify(registerMessage), 'debug');
+                    websocket.send(JSON.stringify(registerMessage));
+                    log('设备注册已发送', 'debug');
                 };
                 
                 websocket.onmessage = function(event) {
                     try {
                         var message = JSON.parse(event.data);
+                        log('收到WebSocket消息: ' + JSON.stringify(message), 'debug');
+                        
                         if (message.type === 'command') {
-                            // 接收服务器命令并发送到串口
-                            log('执行服务器命令: ' + message.data + ' (编码: ' + (message.encoding || 'utf8') + ')', 'command');
-                            elements.dataInput.value = message.data;
-                            elements.sendEncoding.value = message.encoding || 'utf8';
-                            sendData();
+                            // 处理标准命令消息
+                            var command = message.data;
+                            var encoding = message.encoding || 'utf8';
+                            log('执行服务器命令: ' + command + ' (编码: ' + encoding + ')', 'command');
+                            
+                            if (bluetoothConnected) {
+                                // 直接发送命令到蓝牙设备
+                                var textToSend = command;
+                                if (elements.appendCrlf.checked) {
+                                    textToSend += '\r\n';
+                                }
+                                
+                                var encodedData = encodeWithEncoding(textToSend, encoding);
+                                if (typeof bluetoothSerial !== 'undefined') {
+                                    bluetoothSerial.write(encodedData.buffer, function() {
+                                        log('命令转发成功: ' + command, 'success');
+                                    }, function(error) {
+                                        log('命令转发失败: ' + error, 'error');
+                                    });
+                                }
+                            } else {
+                                log('收到命令但蓝牙未连接', 'warning');
+                                showNotification('警告', '收到命令但蓝牙未连接', 'warning');
+                            }
+                        } else if (message.type === 'registered') {
+                            log('设备注册成功: ' + message.device_id, 'success');
+                        } else if (message.type === 'welcome') {
+                            log('服务器欢迎消息: ' + message.message, 'info');
+                        } else if (message.type === 'error') {
+                            log('服务器错误: ' + message.message, 'error');
+                        } else if (message.command) {
+                            // 处理易语言程序格式的消息
+                            var command = message.command;
+                            log('执行服务器命令: ' + command, 'command');
+                            
+                            if (bluetoothConnected) {
+                                var textToSend = command;
+                                if (elements.appendCrlf.checked) {
+                                    textToSend += '\r\n';
+                                }
+                                
+                                var encodedData = encodeWithEncoding(textToSend, 'utf8');
+                                if (typeof bluetoothSerial !== 'undefined') {
+                                    bluetoothSerial.write(encodedData.buffer, function() {
+                                        log('命令转发成功: ' + command, 'success');
+                                    }, function(error) {
+                                        log('命令转发失败: ' + error, 'error');
+                                    });
+                                }
+                            } else {
+                                log('收到命令但蓝牙未连接', 'warning');
+                                showNotification('警告', '收到命令但蓝牙未连接', 'warning');
+                            }
+                        } else {
+                            log('未知的WebSocket消息类型: ' + message.type, 'warning');
                         }
                     } catch (error) {
-                        log('处理WebSocket消息失败: ' + error.message, 'warning');
+                        log('处理WebSocket消息时出错: ' + error.message, 'error');
+                        log('原始消息: ' + event.data, 'error');
+                        
+                        // 如果不是JSON，直接作为命令处理
+                        if (typeof event.data === 'string') {
+                            var command = event.data;
+                            log('收到命令: ' + command, 'command');
+                            
+                            if (bluetoothConnected) {
+                                var textToSend = command;
+                                if (elements.appendCrlf.checked) {
+                                    textToSend += '\r\n';
+                                }
+                                
+                                var encodedData = encodeWithEncoding(textToSend, 'utf8');
+                                if (typeof bluetoothSerial !== 'undefined') {
+                                    bluetoothSerial.write(encodedData.buffer, function() {
+                                        log('命令转发成功: ' + command, 'success');
+                                    }, function(error) {
+                                        log('命令转发失败: ' + error, 'error');
+                                    });
+                                }
+                            } else {
+                                log('收到命令但蓝牙未连接', 'warning');
+                                showNotification('警告', '收到命令但蓝牙未连接', 'warning');
+                            }
+                        }
                     }
                 };
                 
-                websocket.onclose = function() {
-                    log('WebSocket连接已关闭', 'info');
+                websocket.onclose = function(event) {
+                    log('WebSocket连接已关闭，代码: ' + event.code + ', 原因: ' + event.reason, 'info');
                     updateWsStatus('disconnected', '已关闭');
+                    elements.connectWsBtn.textContent = '连接';
                     
                     // 自动重连
                     if (settings.autoReconnectWebsocket) {
