@@ -364,6 +364,7 @@
         var isAutoScrollEnabled = true;
         var reconnectTimer = null;
         var wsReconnectTimer = null;
+        var silentAudio = null;
         var settings = {
             autoReconnectSerial: false,
             autoReconnectWebsocket: true,
@@ -446,6 +447,7 @@
             setupEventListeners();
             checkBluetoothAvailability();
             checkIconvAvailability();
+            initializeBackgroundMode();
         });
 
         // 设备准备就绪
@@ -550,6 +552,82 @@
             log('使用系统默认权限管理，将在需要时请求必要的权限', 'info');
             showNotification('信息', '应用将在需要时请求必要的权限', 'info');
         }
+
+        // 初始化后台模式
+        function initializeBackgroundMode() {
+            log('初始化后台模式...', 'debug');
+            
+            try {
+                // 获取音频元素
+                silentAudio = document.getElementById('silent-audio');
+                
+                if (silentAudio) {
+                    // 设置音频属性
+                    silentAudio.volume = 0; // 静音
+                    silentAudio.loop = true; // 循环播放
+                    
+                    // 尝试播放音频
+                    playSilentAudio();
+                    
+                    log('后台音频初始化成功', 'info');
+                    showNotification('信息', '后台运行模式已启用', 'info');
+                } else {
+                    log('后台音频元素未找到', 'warning');
+                }
+            } catch (error) {
+                log('初始化后台模式失败: ' + error.message, 'error');
+            }
+        }
+
+        // 播放静音音频
+        function playSilentAudio() {
+            if (silentAudio) {
+                try {
+                    silentAudio.play().then(function() {
+                        log('后台音频播放成功', 'debug');
+                    }).catch(function(error) {
+                        log('后台音频播放失败: ' + error.message, 'warning');
+                        // 尝试在用户交互时播放
+                        document.addEventListener('click', function playOnClick() {
+                            silentAudio.play().then(function() {
+                                log('后台音频在用户交互后播放成功', 'debug');
+                            }).catch(function(error) {
+                                log('后台音频在用户交互后播放失败: ' + error.message, 'error');
+                            });
+                            document.removeEventListener('click', playOnClick);
+                        });
+                    });
+                } catch (error) {
+                    log('播放后台音频时出错: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // 暂停静音音频
+        function pauseSilentAudio() {
+            if (silentAudio) {
+                try {
+                    silentAudio.pause();
+                    log('后台音频已暂停', 'debug');
+                } catch (error) {
+                    log('暂停后台音频时出错: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // 窗口聚焦事件
+        window.addEventListener('focus', function() {
+            log('应用获得焦点', 'debug');
+            // 应用获得焦点时可以继续播放静音音频
+            playSilentAudio();
+        });
+
+        // 窗口失焦事件
+        window.addEventListener('blur', function() {
+            log('应用失去焦点', 'debug');
+            // 应用失去焦点时确保静音音频继续播放
+            playSilentAudio();
+        });
 
         // 检查gbk.js可用性
         function checkIconvAvailability() {
@@ -1056,11 +1134,11 @@
                     elements.connectWsBtn.textContent = '断开';
                     showNotification('成功', 'WebSocket连接成功', 'success');
                     
-                    // 注册设备
+                    // 注册设备，使用utf8编码接收服务器数据
                     var registerMessage = {
                         type: 'register',
                         device_id: elements.deviceId.value,
-                        encoding: elements.receiveEncoding.value
+                        encoding: 'utf8'
                     };
                     log('发送注册信息: ' + JSON.stringify(registerMessage), 'debug');
                     websocket.send(JSON.stringify(registerMessage));
@@ -1075,7 +1153,7 @@
                         if (message.type === 'command') {
                             // 处理标准命令消息
                             var command = message.data;
-                            var encoding = message.encoding || 'utf8';
+                            var encoding = 'utf8'; // 强制使用utf8编码处理服务器数据
                             log('执行服务器命令: ' + command + ' (编码: ' + encoding + ')', 'command');
                             
                             if (bluetoothConnected) {
